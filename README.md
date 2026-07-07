@@ -1,4 +1,8 @@
-# asyncapi-cable
+<p align="center">
+  <img src="logo.png" alt="asyncapi-cable" width="200">
+</p>
+
+<h1 align="center">asyncapi-cable</h1>
 
 Generate typed [AnyCable](https://docs.anycable.io) channel clients from an
 **AsyncAPI 3.0** document — the "Orval for cable". Produces platform-agnostic
