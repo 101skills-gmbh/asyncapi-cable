@@ -29,12 +29,15 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
-      # Trusted Publishing (OIDC) needs npm >= 11.5.1; node 22 ships an older npm.
+          cache: pnpm
+      # Trusted Publishing (OIDC) needs npm >= 11.5.1; node ships an older npm.
       - run: npm install -g npm@latest
-      - run: npm install
-      - run: npm test
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      # Publish via npm for OIDC Trusted Publishing (pnpm does not support it yet).
       - run: npm publish --access public
