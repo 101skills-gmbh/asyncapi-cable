@@ -1,0 +1,70 @@
+asyncapi: 3.0.0
+info:
+  title: Fixture Cable API
+  version: v1
+channels:
+  WidgetStatus:
+    address: "{widget_id}-widget-status"
+    x-actioncable-channel: "Widgets::WidgetStatusChannel"
+    parameters:
+      widget_id:
+        description: Widget id
+    messages:
+      WidgetStatusMessage:
+        $ref: "#/components/messages/WidgetStatusMessage"
+      WidgetActionMessage:
+        $ref: "#/components/messages/WidgetActionMessage"
+operations:
+  receiveWidgetStatus:
+    action: receive
+    channel:
+      $ref: "#/channels/WidgetStatus"
+    messages:
+      - $ref: "#/channels/WidgetStatus/messages/WidgetStatusMessage"
+      - $ref: "#/channels/WidgetStatus/messages/WidgetActionMessage"
+components:
+  schemas:
+    WidgetActionEnum:
+      type: string
+      enum:
+        - build
+        - tear_down
+    WidgetStatusMessage:
+      type: object
+      properties:
+        action:
+          $ref: "#/components/schemas/WidgetActionEnum"
+        widget_id:
+          type: string
+        status:
+          type: string
+        record_id:
+          type: [integer, string, "null"]
+        error_message:
+          type: string
+      required: [action, widget_id, status]
+      additionalProperties: true
+      allOf:
+        - if:
+            required: [error_message]
+          then:
+            required: [error_message]
+            properties:
+              status:
+                const: failed
+    WidgetActionMessage:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+      required: [name, status]
+      additionalProperties: true
+  messages:
+    WidgetStatusMessage:
+      payload:
+        $ref: "#/components/schemas/WidgetStatusMessage"
+    WidgetActionMessage:
+      payload:
+        $ref: "#/components/schemas/WidgetActionMessage"

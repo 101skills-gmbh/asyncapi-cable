@@ -1,0 +1,53 @@
+{
+  "name": "asyncapi-cable",
+  "version": "0.1.0",
+  "description": "Generate typed AnyCable channel clients from an AsyncAPI 3.0 document (Vue + React presets).",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "asyncapi",
+    "anycable",
+    "actioncable",
+    "codegen",
+    "websocket",
+    "vue",
+    "react"
+  ],
+  "bin": {
+    "asyncapi-cable": "bin/cli.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.d.mts",
+      "default": "./src/index.mjs"
+    }
+  },
+  "files": [
+    "src",
+    "bin",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@asyncapi/modelina": "^5.10.1",
+    "@asyncapi/parser": "^3.6.0"
+  },
+  "peerDependencies": {
+    "@anycable/core": ">=1.1.0",
+    "react": ">=18.0.0",
+    "vue": ">=3.4.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
+  }
+}
