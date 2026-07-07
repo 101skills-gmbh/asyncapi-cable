@@ -4,10 +4,32 @@
 
 <h1 align="center">asyncapi-cable</h1>
 
-Generate typed [AnyCable](https://docs.anycable.io) channel clients from an
-**AsyncAPI 3.0** document — the "Orval for cable". Produces platform-agnostic
-channel classes + message types (usable on web *and* React Native) plus a thin,
-framework-specific wrapper (Vue composables or React hooks).
+<p align="center">
+  Generate typed <a href="https://docs.anycable.io">AnyCable</a> channel clients from an
+  <strong>AsyncAPI 3.0</strong> document. Produces platform-agnostic channel classes +
+  message types (usable on web <em>and</em> React Native) plus a thin, framework-specific
+  wrapper (Vue composables or React hooks).
+</p>
+
+The "[Orval](https://orval.dev) for cable" — point it at your AsyncAPI cable
+document and get end-to-end typed real-time clients, the same way Orval turns an
+OpenAPI spec into a typed REST client.
+
+## Key Features
+
+- **AsyncAPI 3.0 → typed AnyCable clients** — channel classes + message payload types generated from your cable document
+- **Platform-agnostic core** — the channel classes + models depend only on `@anycable/core`, so they run on web *and* React Native
+- **Vue & React presets** — per-target `preset` emits Vue composables (`onScopeDispose`) or React hooks (`useEffect`); only the runtime + wrapper differ
+- **Typed payloads** — message types generated via [`@asyncapi/modelina`](https://github.com/asyncapi/modelina), preserving snake_case wire keys
+- **Single cable seam** — only `runtime.ts` imports your AnyCable instance ([Orval-mutator](https://orval.dev/guides/custom-client) style), configurable per target
+- **Multi-target config** — one `cable.config.mjs` (analog of `orval.config.ts`) generates many documents at once
+- **Vendor extensions** — `x-actioncable-channel` maps to the Rails channel identifier; `x-client-supplied: false` marks server-derived params
+
+## Requirements
+
+- Node >= 20
+- An AsyncAPI 3.0 cable document
+- In the consuming app: `@anycable/core`, plus `vue` (vue preset) or `react` (react preset)
 
 ## Install
 
@@ -40,6 +62,16 @@ Then run:
 ```bash
 npx asyncapi-cable -c cable.config.mjs
 ```
+
+The config is a map of *target name* → target. Each target:
+
+| Key | Required | Description |
+|-----|----------|-------------|
+| `input` | ✓ | Path to the AsyncAPI 3.0 document (resolved from the cwd) |
+| `output.target` | ✓ | Directory for the generated code — **wiped and rebuilt** on each run |
+| `output.cable.path` | | Import path (from `runtime.ts`) to the file exporting your AnyCable getter |
+| `output.cable.name` | | Named export of that getter (defaults to a built-in seam if `cable` is omitted) |
+| `output.preset` | | `"vue"` (default) or `"react"` |
 
 ## What it emits
 
@@ -123,3 +155,7 @@ GitHub Actions trusted publisher:
 Also enable **Settings → Actions → General → "Allow GitHub Actions to create and
 approve pull requests"** so release-please can open its release PR. After this,
 every merged release PR publishes automatically.
+
+## License
+
+MIT
