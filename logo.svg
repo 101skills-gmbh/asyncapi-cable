@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="gem-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <linearGradient id="facet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A5F3FC" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#0891B2" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Gem hexagon -->
+  <polygon
+    points="256,48 432,158 432,354 256,464 80,354 80,158"
+    fill="url(#gem-grad)"
+    filter="url(#shadow)"
+  />
+
+  <!-- Top facet highlight -->
+  <polygon
+    points="256,48 432,158 256,220 80,158"
+    fill="url(#facet)"
+  />
+
+  <!-- Facet lines -->
+  <line x1="256" y1="48" x2="256" y2="464" stroke="#0E7490" stroke-width="1.5" opacity="0.35"/>
+  <line x1="80" y1="158" x2="432" y2="354" stroke="#0E7490" stroke-width="1.5" opacity="0.25"/>
+  <line x1="432" y1="158" x2="80" y2="354" stroke="#0E7490" stroke-width="1.5" opacity="0.25"/>
+
+  <!-- Opening curly brace -->
+  <text
+    x="152" y="262"
+    font-family="'SF Mono', 'Fira Code', 'Consolas', monospace"
+    font-size="120"
+    font-weight="300"
+    fill="#FFFFFF"
+    text-anchor="middle"
+    dominant-baseline="central"
+    opacity="0.9"
+  >{</text>
+
+  <!-- Closing curly brace -->
+  <text
+    x="360" y="262"
+    font-family="'SF Mono', 'Fira Code', 'Consolas', monospace"
+    font-size="120"
+    font-weight="300"
+    fill="#FFFFFF"
+    text-anchor="middle"
+    dominant-baseline="central"
+    opacity="0.9"
+  >}</text>
+
+  <!-- Duplex message stream (pub/sub over a channel) -->
+  <g opacity="0.95">
+    <!-- Downstream message: server -> client -->
+    <rect x="212" y="218" width="70" height="8" rx="4" fill="#FFFFFF"/>
+    <path d="M292,222 l-12,-7 v14 z" fill="#7DD3FC"/>
+
+    <!-- Upstream message: client -> server -->
+    <path d="M220,250 l12,-7 v14 z" fill="#7DD3FC"/>
+    <rect x="230" y="246" width="70" height="8" rx="4" fill="#7DD3FC"/>
+
+    <!-- Downstream message -->
+    <rect x="212" y="274" width="54" height="8" rx="4" fill="#FFFFFF"/>
+    <path d="M276,278 l-12,-7 v14 z" fill="#7DD3FC"/>
+  </g>
+
+  <!-- Lightning bolt (realtime / cable) -->
+  <path
+    d="M270,314 l-40,52 h26 l-14,44 46,-58 h-27 z"
+    fill="#FFFFFF"
+    opacity="0.92"
+  />
+
+  <!-- Three connected nodes (channel subscribers) -->
+  <circle cx="216" cy="418" r="5" fill="#7DD3FC" opacity="0.85"/>
+  <circle cx="256" cy="418" r="5" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="296" cy="418" r="5" fill="#7DD3FC" opacity="0.85"/>
+  <line x1="221" y1="418" x2="251" y2="418" stroke="#BAE6FD" stroke-width="1.5" opacity="0.6"/>
+  <line x1="261" y1="418" x2="291" y2="418" stroke="#BAE6FD" stroke-width="1.5" opacity="0.6"/>
+</svg>
