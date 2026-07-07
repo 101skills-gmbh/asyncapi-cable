@@ -7,11 +7,11 @@ An npm CLI + library that generates typed [AnyCable](https://docs.anycable.io) c
 ## Development
 
 ```bash
-npm install
-npm test          # node --test
+pnpm install
+pnpm test          # node --test
 ```
 
-Plain ESM, no build step and no transpile — the published files are the source.
+Node and pnpm versions are pinned in `.tool-versions` (managed with [mise](https://mise.jdx.dev)/asdf); pnpm is also pinned via the `packageManager` field for corepack. Plain ESM, no build step and no transpile — the published files are the source.
 
 ## Architecture
 
@@ -37,7 +37,7 @@ Per-target pipeline (in `generateOne`, output dir is wiped then rebuilt):
 
 - `test/generate.test.mjs` — a `node:test` suite: unit tests for the pure helpers (`stripConditionals`, `dedupeUnions`, `clientParamsType`, `renderChannelClass`, `renderComposable`) plus an end-to-end `generateOne` into a throwaway tmp dir asserting on the emitted files
 - `test/fixtures/cable_fixture.yaml` — a minimal AsyncAPI 3.0 cable doc exercising params, enums, the `x-` extensions, and an `if`/`then` conditional
-- Run with `npm test` (`node --test`)
+- Run with `pnpm test` (`node --test`)
 
 ## Style
 
