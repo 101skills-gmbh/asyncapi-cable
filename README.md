@@ -34,9 +34,9 @@ OpenAPI spec into a typed REST client.
 ## Install
 
 ```bash
-npm i -D asyncapi-cable
+pnpm add -D asyncapi-cable
 # the generated code imports these in the consuming app:
-npm i @anycable/core        # + vue (vue preset) or react (react preset)
+pnpm add @anycable/core        # + vue (vue preset) or react (react preset)
 ```
 
 ## Usage
@@ -60,7 +60,7 @@ export default {
 Then run:
 
 ```bash
-npx asyncapi-cable -c cable.config.mjs
+pnpm exec asyncapi-cable -c cable.config.mjs
 ```
 
 The config is a map of *target name* → target. Each target:
