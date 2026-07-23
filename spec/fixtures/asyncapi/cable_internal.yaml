@@ -76,6 +76,7 @@ components:
         record_id:
           type:
           - integer
+          - string
           - 'null'
         payload: {}
         stage:
@@ -124,6 +125,7 @@ components:
       - index
       - link_preview
       - material_generation
+      - material_preview_image
       - message
       - mini_tool_request
       - screen_recorder_convert
