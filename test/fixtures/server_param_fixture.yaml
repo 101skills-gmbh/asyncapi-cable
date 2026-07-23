@@ -1,0 +1,37 @@
+asyncapi: 3.0.0
+info:
+  title: Server-Derived Fixture Cable API
+  version: v1
+channels:
+  UserPing:
+    address: "{user_id}-user-ping"
+    x-actioncable-channel: "UserPingChannel"
+    parameters:
+      user_id:
+        description: Subscriber id, derived server-side from the current user
+        x-client-supplied: false
+    messages:
+      UserPingMessage:
+        $ref: "#/components/messages/UserPingMessage"
+operations:
+  receiveUserPing:
+    action: receive
+    channel:
+      $ref: "#/channels/UserPing"
+    messages:
+      - $ref: "#/channels/UserPing/messages/UserPingMessage"
+components:
+  schemas:
+    UserPingMessage:
+      type: object
+      properties:
+        user_id:
+          type: string
+        status:
+          type: string
+      required: [user_id, status]
+      additionalProperties: true
+  messages:
+    UserPingMessage:
+      payload:
+        $ref: "#/components/schemas/UserPingMessage"
