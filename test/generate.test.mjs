@@ -15,6 +15,7 @@ import {
 } from "../src/index.mjs";
 
 const FIXTURE = join(import.meta.dirname, "fixtures", "cable_fixture.yaml");
+const SERVER_FIXTURE = join(import.meta.dirname, "fixtures", "server_param_fixture.yaml");
 
 /** Run the generator into a throwaway dir and hand the reader to `fn`. */
 async function withGenerated(opts, fn) {
@@ -70,6 +71,69 @@ test("clientParamsType excludes server-derived params", () => {
     clientParamsType({ parameters: { user_id: { "x-client-supplied": false } } }),
     "Record<string, never>"
   );
+});
+
+test("clientParamsType treats a channel with no parameters as empty", () => {
+  assert.equal(clientParamsType({}), "Record<string, never>");
+  assert.equal(clientParamsType({ parameters: {} }), "Record<string, never>");
+  assert.equal(clientParamsType(undefined), "Record<string, never>");
+});
+
+test("clientParamsType joins multiple client params", () => {
+  assert.equal(
+    clientParamsType({ parameters: { board_id: {}, tab_id: { description: "x" } } }),
+    "{ board_id: string; tab_id: string }"
+  );
+});
+
+test("clientParamsType keeps only client params when mixed with server-derived", () => {
+  assert.equal(
+    clientParamsType({
+      parameters: {
+        user_id: { "x-client-supplied": false },
+        board_id: { description: "client picks the board" },
+      },
+    }),
+    "{ board_id: string }"
+  );
+});
+
+test("renderChannelClass emits Record<string, never> for a server-derived channel", () => {
+  const { source, paramsName } = renderChannelClass({
+    channelName: "UserPing",
+    identifier: "UserPingChannel",
+    paramsType: "Record<string, never>",
+    messageNames: ["UserPingMessage"],
+  });
+  assert.equal(paramsName, "UserPingParams");
+  assert.ok(source.includes("export type UserPingParams = Record<string, never>;"));
+  assert.ok(source.includes("export class UserPingChannel extends Channel<UserPingParams, UserPingData>"));
+});
+
+test("renderComposable (vue) omits the params arg when a channel has none", () => {
+  const { source } = renderComposable({
+    channelName: "UserPing",
+    className: "UserPingChannel",
+    dataType: "UserPingData",
+    paramsName: "UserPingParams",
+    hasParams: false,
+    preset: "vue",
+  });
+  assert.ok(!source.includes("params:"));
+  assert.ok(source.includes("subscribeChannel(new UserPingChannel(), handlers)"));
+});
+
+test("renderComposable (react) omits the params arg when a channel has none", () => {
+  const { source } = renderComposable({
+    channelName: "UserPing",
+    className: "UserPingChannel",
+    dataType: "UserPingData",
+    paramsName: "UserPingParams",
+    hasParams: false,
+    preset: "react",
+  });
+  assert.ok(!source.includes("params:"));
+  assert.ok(source.includes("useChannelSubscription(() => new UserPingChannel(), handlers)"));
 });
 
 test("renderChannelClass emits a portable @anycable/core class", () => {
@@ -148,5 +212,17 @@ test("react preset: React hook runtime + shared portable class", async () => {
     assert.ok(
       read("channels/WidgetStatusChannel.ts").includes('import { Channel } from "@anycable/core";')
     );
+  });
+});
+
+test("server-derived channel generates a param-free composable end to end", async () => {
+  await withGenerated({ input: SERVER_FIXTURE }, (read) => {
+    const channel = read("channels/UserPingChannel.ts");
+    assert.ok(channel.includes("export type UserPingParams = Record<string, never>;"));
+    assert.ok(channel.includes('static identifier = "UserPingChannel";'));
+
+    const composable = read("composables/useUserPingChannel.ts");
+    assert.ok(!composable.includes("params:"));
+    assert.ok(composable.includes("subscribeChannel(new UserPingChannel(), handlers)"));
   });
 });
