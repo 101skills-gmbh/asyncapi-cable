@@ -23,7 +23,7 @@ Small surface, three files:
 
 Per-target pipeline (in `generateOne`, output dir is wiped then rebuilt):
 
-1. `parseDocument` — `@asyncapi/parser` reads/validates the AsyncAPI 3.0 doc
+1. `parseDocument` — loads the AsyncAPI 3.0 doc from a local file or an `http(s)` URL (`isRemoteInput` → `fetch`), then `@asyncapi/parser` validates it
 2. `generateModels` → `models/*.ts` — `@asyncapi/modelina` emits payload interfaces + enums. `stripConditionals` drops `if`/`then`/`else` (Modelina mis-flattens the `then` branch); `tidyModelSource`/`dedupeUnions` clean the output. Wire keys are kept **snake_case** (payloads aren't transformed on the socket path)
 3. `generateChannels` → `channels/*.ts` + `composables/*.ts` — one `Channel<Params, Message>` subclass per `receive` operation, plus a per-channel wrapper. Reads the `x-actioncable-channel` and `x-client-supplied` extensions
 4. `renderRuntime` → `runtime.ts` — the preset's subscribe/lifecycle helper; the **only** file that imports the cable seam
