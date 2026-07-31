@@ -108,16 +108,35 @@ export function subscribeChannel<C extends Channel>(
 `;
 }
 
-async function parseDocument(absInput) {
+/** True for an http(s) URL input (fetched over HTTP) vs. a local file path (read from disk). */
+export function isRemoteInput(input) {
+  return /^https?:\/\//i.test(input);
+}
+
+/** Load the raw AsyncAPI document from a URL (fetched) or a local file path. */
+async function loadRawDocument(source) {
+  if (isRemoteInput(source)) {
+    const res = await fetch(source);
+    if (!res.ok) {
+      throw new Error(
+        `Failed to fetch ${source}: ${res.status} ${res.statusText}`
+      );
+    }
+    return res.text();
+  }
+  return fs.readFile(source, "utf8");
+}
+
+async function parseDocument(source) {
   const parser = new Parser();
-  const raw = await fs.readFile(absInput, "utf8");
+  const raw = await loadRawDocument(source);
   const { document, diagnostics } = await parser.parse(raw);
   if (!document) {
     const errors = diagnostics
       .filter((d) => d.severity === 0)
       .map((d) => `  - ${d.message} (${d.path?.join("/")})`)
       .join("\n");
-    throw new Error(`Failed to parse ${absInput}:\n${errors}`);
+    throw new Error(`Failed to parse ${source}:\n${errors}`);
   }
   return document;
 }
@@ -400,8 +419,9 @@ export async function generateOne({
   preset = "vue",
   cwd = process.cwd(),
 }) {
-  // `path.resolve` passes absolute paths through, so tests can target a tmp dir.
-  const absInput = path.resolve(cwd, input);
+  // A URL input is fetched as-is; a local path is resolved against cwd
+  // (`path.resolve` passes absolute paths through, so tests can target a tmp dir).
+  const absInput = isRemoteInput(input) ? input : path.resolve(cwd, input);
   const absOutDir = path.resolve(cwd, outDir);
 
   await fs.rm(absOutDir, { recursive: true, force: true });

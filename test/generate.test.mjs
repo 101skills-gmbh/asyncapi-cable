@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -8,6 +9,7 @@ import {
   clientParamsType,
   dedupeUnions,
   generateOne,
+  isRemoteInput,
   renderChannelClass,
   renderComposable,
   stripConditionals,
@@ -27,6 +29,50 @@ async function withGenerated(opts, fn) {
     rmSync(outDir, { recursive: true, force: true });
   }
 }
+
+test("isRemoteInput distinguishes http(s) URLs from local paths", () => {
+  assert.equal(isRemoteInput("https://example.com/cable.yaml"), true);
+  assert.equal(isRemoteInput("http://example.com/cable.yaml"), true);
+  assert.equal(isRemoteInput("asyncapi/cable_internal.yaml"), false);
+  assert.equal(isRemoteInput("/abs/path/cable.yaml"), false);
+});
+
+test("URL input is fetched and generated end to end", async () => {
+  const yaml = await readFile(FIXTURE, "utf8");
+  const url = "https://backend.example/cable-docs/schemas/cable_mobile";
+  const originalFetch = globalThis.fetch;
+  const seen = [];
+  globalThis.fetch = async (u) => {
+    seen.push(String(u));
+    return new Response(yaml, {
+      status: 200,
+      headers: { "content-type": "application/x-yaml" },
+    });
+  };
+  const outDir = mkdtempSync(join(tmpdir(), "asyncapi-cable-"));
+  try {
+    await generateOne({ input: url, outDir });
+    assert.deepEqual(seen, [url]);
+    const channel = readFileSync(join(outDir, "channels/WidgetStatusChannel.ts"), "utf8");
+    assert.ok(channel.includes('static identifier = "Widgets::WidgetStatusChannel";'));
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(outDir, { recursive: true, force: true });
+  }
+});
+
+test("a failed URL fetch throws with status text", async () => {
+  const url = "https://backend.example/cable-docs/schemas/missing";
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("nope", { status: 404, statusText: "Not Found" });
+  const outDir = mkdtempSync(join(tmpdir(), "asyncapi-cable-"));
+  try {
+    await assert.rejects(generateOne({ input: url, outDir }), /Failed to fetch .*404 Not Found/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(outDir, { recursive: true, force: true });
+  }
+});
 
 test("stripConditionals removes if/then so status stays a plain string", () => {
   const doc = {

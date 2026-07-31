@@ -67,7 +67,7 @@ The config is a map of *target name* → target. Each target:
 
 | Key | Required | Description |
 |-----|----------|-------------|
-| `input` | ✓ | Path to the AsyncAPI 3.0 document (resolved from the cwd) |
+| `input` | ✓ | Path to a local AsyncAPI 3.0 document (resolved from the cwd), or an `http(s)` URL to fetch it from (e.g. a backend that serves the contract) |
 | `output.target` | ✓ | Directory for the generated code — **wiped and rebuilt** on each run |
 | `output.cable.path` | | Import path (from `runtime.ts`) to the file exporting your AnyCable getter |
 | `output.cable.name` | | Named export of that getter (defaults to a built-in seam if `cable` is omitted) |

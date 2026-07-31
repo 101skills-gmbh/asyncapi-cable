@@ -9,6 +9,7 @@ export interface CableMutator {
 }
 
 export interface CableTarget {
+  /** Path to a local AsyncAPI 3.0 document, or an http(s) URL to fetch it from. */
   input: string;
   output: { target: string; cable?: CableMutator; preset?: CablePreset };
 }
@@ -28,6 +29,7 @@ export interface ChannelParametersJson {
   [key: string]: unknown;
 }
 
+export function isRemoteInput(input: string): boolean;
 export function stripConditionals<T extends AsyncapiDocumentJson>(json: T): T;
 export function dedupeUnions(source: string): string;
 export function tidyModelSource(source: string): string;
