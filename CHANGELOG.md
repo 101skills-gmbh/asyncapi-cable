@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/101skills-gmbh/asyncapi-cable/compare/asyncapi-cable-v0.2.0...asyncapi-cable-v0.2.1) (2026-07-31)
+
+
+### Bug Fixes
+
+* mark bin/cli.mjs executable ([58d57a6](https://github.com/101skills-gmbh/asyncapi-cable/commit/58d57a66eed7b0eecd1c443dcd2670550934f8cb))
+* mark bin/cli.mjs executable ([02c5e58](https://github.com/101skills-gmbh/asyncapi-cable/commit/02c5e58dc3a3678cf6b64f7e3068d1e8fcaa81fb))
+
 ## [0.2.0](https://github.com/101skills-gmbh/asyncapi-cable/compare/asyncapi-cable-v0.1.0...asyncapi-cable-v0.2.0) (2026-07-31)
 
 
