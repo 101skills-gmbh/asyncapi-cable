@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Antonio:wght@400;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --h1:140px; --h2:88px; --title:72px; --sub:40px; --body:34px; --cap:30px; --code:26px; --small:24px; --eyebrow:24px; }
+  * { box-sizing:border-box; }
+  a { color:#3bb5ae; text-decoration:none; }
+  a:hover { color:#6fd3cc; }
+</style>
+</helmet>
+
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+  <section data-label="Cover" data-screen-label="01" data-speaker-notes="Hook — a companion to the openapi_ruby talk. Show of hands: who's got an ActionCable channel where the frontend and the server quietly disagree about what's in the payload? Right. WebSockets are the one corner of a Rails app with no typed contract. This is asyncapi_cable: docs, tests, and runtime validation for your broadcasts, sharing the exact same schema components as your REST API." style="font-family:'Barlow',sans-serif; color:#ede6d6; background:#0a0e17;">
+    <dc-import name="LcarsFrame" label="ASYNCAPI-CABLE" sec="01" total="15" hint-size="100%,100%" style="position:absolute; inset:0; z-index:0;"></dc-import>
+    <div style="position:absolute; left:176px; right:56px; top:150px; bottom:80px; z-index:1; display:flex; flex-direction:column; justify-content:center;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:var(--eyebrow); letter-spacing:5px; text-transform:uppercase; color:#e4594c; margin-bottom:34px;">Ruby Usergroup // Engineering Briefing · Pt. 2</div>
+      <div style="font-family:'JetBrains Mono',monospace; font-weight:700; font-size:var(--h1); line-height:0.92; color:#ead9b0; letter-spacing:-2px;">asyncapi_cable</div>
+      <div style="font-family:'Barlow',sans-serif; font-size:var(--sub); color:#ede6d6; margin-top:34px; max-width:1180px; line-height:1.3;">A typed contract for your ActionCable broadcasts — docs, tests &amp; runtime validation, in Rails.</div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:var(--small); letter-spacing:2px; color:#5e8fc0; margin-top:44px;">v0.1 · MIT · AsyncAPI 3 · Ruby ≥ 3.2 · Rails ≥ 7</div>
+    </div>
+  </section>
+
+  <section data-label="Speaker" data-screen-label="02" data-speaker-notes="Same as last time — I'm Marten, engineer at fobizz. We're a Rails shop, edtech, and we push a lot over WebSockets: job progress, live previews, generated material landing in the UI. That firehose is exactly where this gem came from." style="font-family:'Barlow',sans-serif; color:#ede6d6; background:#0a0e17;">
+    <dc-import name="LcarsFrame" label="ASYNCAPI-CABLE" sec="02" total="15" hint-size="100%,100%" style="position:absolute; inset:0; z-index:0;"></dc-import>
+    <div style="position:absolute; left:176px; right:56px; top:150px; bottom:80px; z-index:1; display:flex; flex-direction:column; justify-content:center;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:var(--eyebrow); letter-spacing:5px; text-transform:uppercase; color:#e4594c; margin-bottom:30px;">Personnel // Speaker</div>
+      <div style="font-family:'Antonio',sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:2px; font-size:var(--h2); color:#e9a94d; line-height:0.98;">Marten Klitzke</div>
+      <div style="font-family:'Barlow',sans-serif; font-size:var(--sub); color:#ede6d6; margin-top:18px;">Software Engineer · fobizz</div>
+      <div style="display:flex; gap:60px; margin-top:56px; font-family:'JetBrains Mono',monospace; font-size:var(--small); letter-spacing:1px;">
+        <div><span style="color:#5e8fc0;">web&nbsp;&nbsp;&nbsp;&nbsp;</span> <a href="https://marten.klitzke.xyz">marten.klitzke.xyz</a></div>
+        <div><span style="color:#5e8fc0;">github&nbsp;</span> <a href="https://github.com/mortik">@mortik</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sections 03–15: see slides.md for the full, faithfully-ported content.
+       This file is the Claude Design source of record (imported via the
+       claude_design MCP); it depends on ./support.js, ./deck-stage.js and a
+       LcarsFrame component that are not vendored here, so it is kept for
+       provenance only and does not render standalone. -->
+
+</x-import>
+</x-dc>
+</body>
+</html>
