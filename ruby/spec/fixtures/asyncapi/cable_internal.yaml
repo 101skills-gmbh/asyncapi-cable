@@ -1,0 +1,153 @@
+---
+asyncapi: 3.0.0
+info:
+  title: Fobizz Internal Cable API
+  version: v1
+  description: AsyncAPI 3 contract for fobizz ActionCable channels consumed by the
+    internal web app.
+channels:
+  CurrentUserJobStatus:
+    address: "{user_id}-user-job-status"
+    parameters:
+      user_id:
+        description: Tools user ID (UUID) — the subscriber's own id
+        schema:
+          type: string
+    messages:
+      CurrentUserJobStatusMessage:
+        "$ref": "#/components/messages/CurrentUserJobStatusMessage"
+      CurrentUserActionJobStatusMessage:
+        "$ref": "#/components/messages/CurrentUserActionJobStatusMessage"
+operations:
+  receiveCurrentUserJobStatus:
+    action: receive
+    channel:
+      "$ref": "#/channels/CurrentUserJobStatus"
+    messages:
+    - "$ref": "#/channels/CurrentUserJobStatus/messages/CurrentUserJobStatusMessage"
+    - "$ref": "#/channels/CurrentUserJobStatus/messages/CurrentUserActionJobStatusMessage"
+    summary: Job status, progress, and error updates for the subscribing user
+components:
+  schemas:
+    CurrentUserActionJobStatusMessage:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+        record_id:
+          type:
+          - integer
+          - string
+          - 'null'
+        payload: {}
+        exception:
+          type: string
+        message:
+          type: string
+        error_message:
+          type: string
+      required:
+      - status
+      - name
+      additionalProperties: true
+      allOf:
+      - if:
+          required:
+          - exception
+        then:
+          required:
+          - exception
+          - message
+          - error_message
+          properties:
+            status:
+              const: failed
+    CurrentUserJobStatusMessage:
+      type: object
+      properties:
+        action:
+          "$ref": "#/components/schemas/JobStatusActionEnum"
+        user_id:
+          type: string
+        status:
+          type: string
+        record_id:
+          type:
+          - integer
+          - string
+          - 'null'
+        payload: {}
+        stage:
+          type: string
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+        exception:
+          type: string
+        message:
+          type: string
+        error_message:
+          type: string
+      required:
+      - action
+      - user_id
+      - status
+      additionalProperties: true
+      allOf:
+      - if:
+          required:
+          - exception
+        then:
+          required:
+          - exception
+          - message
+          - error_message
+          properties:
+            status:
+              const: failed
+    JobStatusActionEnum:
+      type: string
+      enum:
+      - assistant
+      - audio_recorder_convert
+      - chat_completion
+      - conversation_name_updated
+      - converter
+      - document_qa
+      - feedback_result
+      - form_completion
+      - generate_feedback
+      - h5p_content
+      - image_generation
+      - index
+      - link_preview
+      - material_generation
+      - material_preview_image
+      - message
+      - mini_tool_request
+      - screen_recorder_convert
+      - text_extract
+      - to_teach_worksheet_import
+      - video_recorder_convert
+      - worksheet_ai_generation
+  messages:
+    CurrentUserActionJobStatusMessage:
+      payload:
+        "$ref": "#/components/schemas/CurrentUserActionJobStatusMessage"
+    CurrentUserJobStatusMessage:
+      payload:
+        "$ref": "#/components/schemas/CurrentUserJobStatusMessage"
+servers:
+  dev:
+    host: localhost:3000
+    pathname: "/cable"
+    protocol: ws
+    description: Dev Server
+  live:
+    host: app.fobizz.com
+    pathname: "/cable"
+    protocol: wss
+    description: Live Server
