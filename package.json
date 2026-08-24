@@ -6,10 +6,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/101skills-gmbh/asyncapi-cable.git"
+    "url": "git+https://github.com/openapi-ruby/asyncapi-cable.git"
   },
-  "homepage": "https://github.com/101skills-gmbh/asyncapi-cable#readme",
-  "bugs": "https://github.com/101skills-gmbh/asyncapi-cable/issues",
+  "homepage": "https://github.com/openapi-ruby/asyncapi-cable#readme",
+  "bugs": "https://github.com/openapi-ruby/asyncapi-cable/issues",
   "keywords": [
     "asyncapi",
     "anycable",

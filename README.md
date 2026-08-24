@@ -147,7 +147,7 @@ npm publish --access public
 Then, on the package's npm page → **Settings → Publishing access**, add a
 GitHub Actions trusted publisher:
 
-- Organization/user: `101skills-gmbh`
+- Organization/user: `openapi-ruby`
 - Repository: `asyncapi-cable`
 - Workflow filename: `release-please.yml`
 - Environment: *(leave blank)*
@@ -155,6 +155,11 @@ GitHub Actions trusted publisher:
 Also enable **Settings → Actions → General → "Allow GitHub Actions to create and
 approve pull requests"** so release-please can open its release PR. After this,
 every merged release PR publishes automatically.
+
+A trusted publisher is bound to one `organization/repository` pair, so
+**transferring the repository invalidates it** — automated publishing fails
+until the entry is pointed at the new owner. Update it on the npm package page
+in the same sitting as the transfer.
 
 ## License
 
