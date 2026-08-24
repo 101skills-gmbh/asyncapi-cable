@@ -150,12 +150,25 @@ publishes to npm — no stored `NPM_TOKEN`; publishing uses npm
 [Trusted Publishing](https://docs.npmjs.com/trusted-publishers) via GitHub
 Actions OIDC.
 
+### Merge queue
+
+`ci.yml` listens on `merge_group` as well as `pull_request`. A queued entry is
+tested against a merge-group ref, so a required check that only runs on
+`pull_request` never reports there and the entry is dropped when the queue's
+check timeout expires.
+
 ### Component scoping
 
 The root package covers the npm generator and the `ruby` package covers the
 gem. A package path of `.` matches every commit, so the root entry carries
 `exclude-paths: ["ruby"]` — without it, a gem-only change would also cut an npm
 release with a changelog full of Ruby entries.
+
+`last-release-sha` marks where the gem was imported. The commits that came in
+with `git subtree` carry root-level paths from before the import, so the root
+package would otherwise keep proposing a release for changes that never
+touched the npm side — and `exclude-paths` cannot filter them, because those
+paths really were at the root when the commits were written.
 
 ### Repository settings this depends on
 
