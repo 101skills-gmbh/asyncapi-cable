@@ -4,6 +4,11 @@
     ".": {
       "release-type": "node",
       "package-name": "asyncapi-cable"
+    },
+    "ruby": {
+      "release-type": "ruby",
+      "package-name": "asyncapi_cable",
+      "version-file": "lib/asyncapi_cable/version.rb"
     }
   }
 }

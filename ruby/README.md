@@ -8,10 +8,10 @@ OpenAPI 3.1 still has no native WebSocket support. AsyncAPI 3 does, and uses JSO
 
 ## Quick start
 
-Add the gem (or, in-repo, a path entry) to the host Gemfile:
+Add the gem to the host Gemfile:
 
 ```ruby
-gem "asyncapi_cable", path: "engines/asyncapi_cable"
+gem "asyncapi_cable"
 ```
 
 Configure one or more cable documents in an initializer. Each entry is one AsyncAPI document and one `component_scope` used to filter `OpenapiRuby::Components::Base` subclasses:
@@ -180,13 +180,21 @@ An operation's `messages` are treated as alternatives per AsyncAPI 3 — a paylo
 
 The AsyncAPI doc is written from the raw schema definitions, not the camelized `OpenapiRuby::Components::Loader` projection. This is deliberate: ActionCable broadcasts are snake_case in the wild, so the cable document describes the actual wire shape rather than the REST-style camelCase view of the same component. Both the writer and the runtime validator follow the same convention.
 
-## Testing the engine itself
+## Developing the gem
+
+The gem lives in `ruby/` of the [asyncapi-cable](https://github.com/openapi-ruby/asyncapi-cable)
+repository, alongside the npm generator that turns the documents this gem
+writes into typed cable clients.
 
 ```sh
-cd engines/asyncapi_cable
+cd ruby
 bundle install
 bundle exec rspec
+bundle exec standardrb
 ```
+
+Specs run against the dummy Rails app in `spec/dummy`. No Gemfile.lock is
+committed (gem convention), so a run resolves against the current gems.
 
 ## License
 

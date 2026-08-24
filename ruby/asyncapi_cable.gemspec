@@ -5,7 +5,7 @@ Gem::Specification.new do |spec|
   spec.version = AsyncapiCable::VERSION
   spec.authors = ["Fobizz"]
   spec.email = ["dev@fobizz.com"]
-  spec.homepage = "https://github.com/fobizz/asyncapi_cable"
+  spec.homepage = "https://github.com/openapi-ruby/asyncapi-cable"
   spec.summary = "AsyncAPI 3 documentation and runtime validation for Rails ActionCable channels."
   spec.description = <<~DESC
     AsyncAPI Cable adds an AsyncAPI 3 DSL on top of Rails ActionCable.
@@ -18,7 +18,8 @@ Gem::Specification.new do |spec|
 
   spec.metadata["allowed_push_host"] = "https://rubygems.org"
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = spec.homepage
+  spec.metadata["source_code_uri"] = "#{spec.homepage}/tree/main/ruby"
+  spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/main/ruby/CHANGELOG.md"
   spec.metadata["rubygems_mfa_required"] = "true"
 
   spec.files = Dir.chdir(File.expand_path(__dir__)) do

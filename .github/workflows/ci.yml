@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  npm:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,3 +17,21 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
+
+  gem:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ruby
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          # Reads ruby/.tool-versions. The gem ships no Gemfile.lock (gem
+          # convention), so bundler-cache has nothing to key a cache off —
+          # resolve on each run instead.
+          working-directory: ruby
+          bundler-cache: false
+      - run: bundle install --jobs 4
+      - run: bundle exec rspec
+      - run: bundle exec standardrb

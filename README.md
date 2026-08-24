@@ -15,6 +15,21 @@ The "[Orval](https://orval.dev) for cable" — point it at your AsyncAPI cable
 document and get end-to-end typed real-time clients, the same way Orval turns an
 OpenAPI spec into a typed REST client.
 
+## Two packages, one contract
+
+This repository ships both ends of the cable contract:
+
+| Package | Path | What it does |
+|---------|------|--------------|
+| npm **`asyncapi-cable`** | `/` | Generates typed AnyCable clients *from* an AsyncAPI 3 document |
+| gem **`asyncapi_cable`** | [`ruby/`](ruby) | Generates that document *from* your Rails ActionCable channels, and validates broadcast payloads against it at runtime |
+
+They are released independently — the gem writes the document, the npm package
+consumes it — and neither requires the other. The gem pairs with
+[`openapi-ruby`](https://github.com/openapi-ruby/openapi-ruby), sharing its
+schema-component registry so one component can appear in both the OpenAPI and
+the AsyncAPI document.
+
 ## Key Features
 
 - **AsyncAPI 3.0 → typed AnyCable clients** — channel classes + message payload types generated from your cable document
