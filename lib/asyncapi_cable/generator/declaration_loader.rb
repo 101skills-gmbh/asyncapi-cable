@@ -1,4 +1,6 @@
 require "asyncapi_cable"
+require "openapi_ruby/generator/autorun_suppressor"
+require "openapi_ruby/generator/test_schema_suppressor"
 
 module AsyncapiCable
   module Generator
@@ -30,9 +32,6 @@ module AsyncapiCable
       end
 
       def suppress_side_effects!
-        require "openapi_ruby/generator/autorun_suppressor"
-        require "openapi_ruby/generator/test_schema_suppressor"
-
         OpenapiRuby::Generator::AutorunSuppressor.install!
         OpenapiRuby::Generator::TestSchemaSuppressor.install!
       end
