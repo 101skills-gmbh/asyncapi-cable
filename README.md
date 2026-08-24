@@ -126,6 +126,42 @@ bundle exec rake asyncapi_cable:generate PATTERN="spec/asyncapi/**/*_spec.rb"
 # writes asyncapi/cable_internal.yaml
 ```
 
+`FRAMEWORK=` selects which DSL adapters are installed — `rspec`, `minitest`, or
+`hybrid` for a suite holding both during a migration. It defaults to what the
+host's directory layout says (`spec/rails_helper.rb` and/or
+`test/test_helper.rb` present), and `PATTERN` defaults to that framework's
+files. Both are usually worth spelling out in a wrapper script, since
+declarations live in a known subdirectory:
+
+```sh
+FRAMEWORK=hybrid bundle exec rake asyncapi_cable:generate \
+  PATTERN="spec/asyncapi/**/*_spec.rb, test/asyncapi/**/*_test.rb"
+```
+
+Generation runs in a subprocess with the host's environment set to `test`. The
+declaration files are loaded for their `channel` blocks and never executed:
+openapi-ruby's `AutorunSuppressor` keeps the `at_exit` hook that runs a suite
+from being registered, and its `TestSchemaSuppressor` keeps
+`maintain_test_schema!` from demanding a database. Nothing in a document comes
+from the database, so generation needs none.
+
+A host test helper can skip its test-time setup during such a run:
+
+```ruby
+# test/test_helper.rb
+unless AsyncapiCable.schema_generating?
+  require "rails/test_help"
+end
+```
+
+The subprocess also sets openapi-ruby's `OPENAPI_RUBY_GENERATING`, so a helper
+already guarding on `OpenapiRuby.schema_generating?` needs no second guard.
+Guarding is optional per helper: a helper whose constants are referenced at
+declaration-file *load* time must stay unguarded — narrow `PATTERN` instead.
+
+`PATTERN` matching nothing is an error rather than a no-op, so a typo in a glob
+can't quietly leave the committed documents untouched.
+
 ## Runtime validation
 
 When `config.validation_mode` is not `:disabled`, the engine prepends a hook into `ActionCable::Server::Broadcasting#broadcast` that validates each payload against the **committed AsyncAPI document** (`Runtime::ContractRegistry` parses and memoizes `asyncapi/<schema>.yaml`) for any channel whose stream address matches. The specs + generator are the *write* side of the contract; the runtime only *reads* the committed artifact — so validation works in every process that broadcasts (Minitest, dev server), not just where the RSpec DSL happened to load. A channel that isn't in the generated doc is invisible to runtime validation until `rake asyncapi_cable:generate` output is committed.

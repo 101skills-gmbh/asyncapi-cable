@@ -26,5 +26,22 @@ module AsyncapiCable
     def reset_configuration!
       @configuration = Configuration.new
     end
+
+    # True when the current process was started by `asyncapi_cable:generate`
+    # (the rake task sets ASYNCAPI_CABLE_GENERATING=true in the subprocess).
+    #
+    # Such a run loads declaration files for their `channel` blocks and never
+    # executes them, so a host test helper can skip its test-time setup:
+    #
+    #   unless AsyncapiCable.schema_generating?
+    #     require "rails/test_help"
+    #   end
+    #
+    # Cable generation also sets openapi-ruby's OPENAPI_RUBY_GENERATING, so a
+    # helper already guarding on `OpenapiRuby.schema_generating?` needs no
+    # second guard.
+    def schema_generating?
+      ENV["ASYNCAPI_CABLE_GENERATING"] == "true"
+    end
   end
 end
