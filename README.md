@@ -180,21 +180,18 @@ After this, every merged release PR publishes automatically.
 
 ### RubyGems
 
-Same shape, same first-publish caveat — the gem has to exist before a trusted
-publisher can be attached to it:
+No manual first push: RubyGems supports a **pending** trusted publisher for a
+gem that does not exist yet. Create it at
+[rubygems.org/profile/oidc/pending_trusted_publishers](https://rubygems.org/profile/oidc/pending_trusted_publishers):
 
-```bash
-cd ruby
-gem build asyncapi_cable.gemspec
-gem push asyncapi_cable-*.gem
-```
-
-Then, on the gem's RubyGems page → **Trusted publishers**, add:
-
+- Gem name: `asyncapi_cable`
 - Repository owner: `openapi-ruby`
 - Repository name: `asyncapi-cable`
 - Workflow filename: `release-please.yml`
 - Environment: `rubygems`
+
+The first successful push from that workflow creates the gem and converts the
+entry into a normal trusted publisher.
 
 A trusted publisher is bound to one `organization/repository` pair, so
 **transferring the repository invalidates it** on both registries — automated
