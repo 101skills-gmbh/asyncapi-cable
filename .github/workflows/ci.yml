@@ -3,7 +3,13 @@ name: CI
 on:
   push:
     branches: [main]
+  # Every pull request, whatever it targets: a PR stacked on another branch
+  # would otherwise merge with no test job having run at all.
   pull_request:
+  # Required for the merge queue: queued entries run against a merge_group
+  # ref, and a required check that never reports there drops the entry when
+  # the queue's check timeout expires.
+  merge_group:
 
 jobs:
   js-tests:
