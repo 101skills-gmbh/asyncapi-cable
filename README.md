@@ -15,6 +15,21 @@ The "[Orval](https://orval.dev) for cable" — point it at your AsyncAPI cable
 document and get end-to-end typed real-time clients, the same way Orval turns an
 OpenAPI spec into a typed REST client.
 
+## Two packages, one contract
+
+This repository ships both ends of the cable contract:
+
+| Package | Path | What it does |
+|---------|------|--------------|
+| npm **`asyncapi-cable`** | `/` | Generates typed AnyCable clients *from* an AsyncAPI 3 document |
+| gem **`asyncapi_cable`** | [`ruby/`](ruby) | Generates that document *from* your Rails ActionCable channels, and validates broadcast payloads against it at runtime |
+
+They are released independently — the gem writes the document, the npm package
+consumes it — and neither requires the other. The gem pairs with
+[`openapi-ruby`](https://github.com/openapi-ruby/openapi-ruby), sharing its
+schema-component registry so one component can appear in both the OpenAPI and
+the AsyncAPI document.
+
 ## Key Features
 
 - **AsyncAPI 3.0 → typed AnyCable clients** — channel classes + message payload types generated from your cable document
@@ -135,7 +150,16 @@ publishes to npm — no stored `NPM_TOKEN`; publishing uses npm
 [Trusted Publishing](https://docs.npmjs.com/trusted-publishers) via GitHub
 Actions OIDC.
 
-### One-time bootstrap
+### Repository settings this depends on
+
+The `openapi-ruby` organization does not let `GITHUB_TOKEN` open pull requests,
+so release-please authenticates with a **`RELEASE_PLEASE_TOKEN`** repository
+secret (a PAT with `contents` + `pull-requests` write). Without it the release
+job runs and quietly raises no release PR. Repository settings do **not**
+survive a transfer between organizations — after a move, re-check this secret,
+the branch ruleset, and both trusted publishers.
+
+### npm
 
 Trusted Publishing can only be configured on a package that already exists on
 npm, so the **first** publish must be done manually:
@@ -152,9 +176,26 @@ GitHub Actions trusted publisher:
 - Workflow filename: `release-please.yml`
 - Environment: *(leave blank)*
 
-Also enable **Settings → Actions → General → "Allow GitHub Actions to create and
-approve pull requests"** so release-please can open its release PR. After this,
-every merged release PR publishes automatically.
+After this, every merged release PR publishes automatically.
+
+### RubyGems
+
+No manual first push: RubyGems supports a **pending** trusted publisher for a
+gem that does not exist yet. Create it at
+[rubygems.org/profile/oidc/pending_trusted_publishers](https://rubygems.org/profile/oidc/pending_trusted_publishers):
+
+- Gem name: `asyncapi_cable`
+- Repository owner: `openapi-ruby`
+- Repository name: `asyncapi-cable`
+- Workflow filename: `release-please.yml`
+- Environment: `rubygems`
+
+The first successful push from that workflow creates the gem and converts the
+entry into a normal trusted publisher.
+
+A trusted publisher is bound to one `organization/repository` pair, so
+**transferring the repository invalidates it** on both registries — automated
+publishing fails until each entry is pointed at the new owner.
 
 A trusted publisher is bound to one `organization/repository` pair, so
 **transferring the repository invalidates it** — automated publishing fails

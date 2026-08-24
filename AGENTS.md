@@ -4,11 +4,20 @@
 
 An npm CLI + library that generates typed [AnyCable](https://docs.anycable.io) channel clients from an **AsyncAPI 3.0** document — the "Orval for cable". Emits a platform-agnostic core (channel classes + message types depending only on `@anycable/core`, usable on web and React Native) plus a thin framework preset (Vue composables or React hooks).
 
+## Repository layout
+
+Polyglot: the npm generator is at the repository root, the Ruby gem that writes
+the documents it consumes lives in `ruby/` (see `ruby/README.md`, and
+`ruby/AGENTS.md` if present). The two are released independently through
+release-please components — `.` for npm, `ruby` for the gem.
+
 ## Development
 
 ```bash
 pnpm install
 pnpm test          # node --test
+
+cd ruby && bundle install && bundle exec rspec   # the gem
 ```
 
 Node and pnpm versions are pinned in `.tool-versions` (managed with [mise](https://mise.jdx.dev)/asdf); pnpm is also pinned via the `packageManager` field for corepack. Plain ESM, no build step and no transpile — the published files are the source.
