@@ -150,6 +150,13 @@ publishes to npm — no stored `NPM_TOKEN`; publishing uses npm
 [Trusted Publishing](https://docs.npmjs.com/trusted-publishers) via GitHub
 Actions OIDC.
 
+### Component scoping
+
+The root package covers the npm generator and the `ruby` package covers the
+gem. A package path of `.` matches every commit, so the root entry carries
+`exclude-paths: ["ruby"]` — without it, a gem-only change would also cut an npm
+release with a changelog full of Ruby entries.
+
 ### Repository settings this depends on
 
 The `openapi-ruby` organization does not let `GITHUB_TOKEN` open pull requests,
