@@ -20,6 +20,10 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          # The openapi-ruby org forbids GITHUB_TOKEN from opening pull
+          # requests, so release-please needs its own token to raise the
+          # release PR — same arrangement as openapi-ruby/openapi-ruby.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
   publish-npm:
     needs: release-please
@@ -47,6 +51,7 @@ jobs:
     needs: release-please
     if: needs.release-please.outputs.gem_release_created == 'true'
     runs-on: ubuntu-latest
+    environment: rubygems
     permissions:
       contents: read
       id-token: write
@@ -63,6 +68,6 @@ jobs:
       - run: bundle exec rspec
       # Trusted Publishing (OIDC) — no API key in secrets. The pairing is bound
       # to this repository on the gem's RubyGems page.
-      - uses: rubygems/configure-rubygems-credentials@main
+      - uses: rubygems/configure-rubygems-credentials@v1.0.0
       - run: gem build asyncapi_cable.gemspec
       - run: gem push asyncapi_cable-*.gem

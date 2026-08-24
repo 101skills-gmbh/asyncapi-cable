@@ -150,7 +150,16 @@ publishes to npm — no stored `NPM_TOKEN`; publishing uses npm
 [Trusted Publishing](https://docs.npmjs.com/trusted-publishers) via GitHub
 Actions OIDC.
 
-### One-time bootstrap
+### Repository settings this depends on
+
+The `openapi-ruby` organization does not let `GITHUB_TOKEN` open pull requests,
+so release-please authenticates with a **`RELEASE_PLEASE_TOKEN`** repository
+secret (a PAT with `contents` + `pull-requests` write). Without it the release
+job runs and quietly raises no release PR. Repository settings do **not**
+survive a transfer between organizations — after a move, re-check this secret,
+the branch ruleset, and both trusted publishers.
+
+### npm
 
 Trusted Publishing can only be configured on a package that already exists on
 npm, so the **first** publish must be done manually:
@@ -162,14 +171,34 @@ npm publish --access public
 Then, on the package's npm page → **Settings → Publishing access**, add a
 GitHub Actions trusted publisher:
 
-- Organization/user: `101skills-gmbh`
+- Organization/user: `openapi-ruby`
 - Repository: `asyncapi-cable`
 - Workflow filename: `release-please.yml`
 - Environment: *(leave blank)*
 
-Also enable **Settings → Actions → General → "Allow GitHub Actions to create and
-approve pull requests"** so release-please can open its release PR. After this,
-every merged release PR publishes automatically.
+After this, every merged release PR publishes automatically.
+
+### RubyGems
+
+Same shape, same first-publish caveat — the gem has to exist before a trusted
+publisher can be attached to it:
+
+```bash
+cd ruby
+gem build asyncapi_cable.gemspec
+gem push asyncapi_cable-*.gem
+```
+
+Then, on the gem's RubyGems page → **Trusted publishers**, add:
+
+- Repository owner: `openapi-ruby`
+- Repository name: `asyncapi-cable`
+- Workflow filename: `release-please.yml`
+- Environment: `rubygems`
+
+A trusted publisher is bound to one `organization/repository` pair, so
+**transferring the repository invalidates it** on both registries — automated
+publishing fails until each entry is pointed at the new owner.
 
 ## License
 
