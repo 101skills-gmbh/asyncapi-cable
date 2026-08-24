@@ -3,7 +3,10 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "package-name": "asyncapi-cable"
+      "package-name": "asyncapi-cable",
+      "exclude-paths": [
+        "ruby"
+      ]
     },
     "ruby": {
       "release-type": "ruby",
