@@ -28,5 +28,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "actioncable", ">= 7.1"
   spec.add_dependency "activesupport", ">= 7.1"
   spec.add_dependency "json_schemer", ">= 2.3"
-  spec.add_dependency "openapi-ruby", ">= 4.0"
+  # 4.0.3 is the first release whose generator suppressors this engine reuses.
+  spec.add_dependency "openapi-ruby", ">= 4.0.3"
+  spec.add_dependency "railties", ">= 7.1"
 end
