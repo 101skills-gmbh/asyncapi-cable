@@ -35,6 +35,31 @@ export function dedupeUnions(source: string): string;
 export function tidyModelSource(source: string): string;
 export function clientParamsType(channelJson: ChannelParametersJson): string;
 
+export interface ContentSchemaTarget {
+  /** Component whose property carries the JSON string. */
+  message: string;
+  /** Property name on that component (typically `payload`). */
+  property: string;
+  /** Component describing the decoded value. */
+  component: string;
+  required: boolean;
+  /** The inlined `contentSchema` subtree. */
+  schema: Record<string, unknown>;
+}
+
+export function contentSchemaTargets(
+  documentJson: AsyncapiDocumentJson
+): ContentSchemaTarget[];
+export function refName(pointer: string | undefined): string | undefined;
+export function contentSchemaDocument(
+  schema: Record<string, unknown> | undefined,
+  componentName: string
+): Record<string, unknown> | undefined;
+export function nameNestedSchemas<T>(node: T): T;
+export function renderPayloadParser(
+  target: Omit<ContentSchemaTarget, "schema">
+): string;
+
 export function renderChannelClass(opts: {
   channelName: string;
   identifier: string;

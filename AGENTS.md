@@ -36,7 +36,9 @@ Per-target pipeline (in `generateOne`, output dir is wiped then rebuilt):
 2. `generateModels` → `models/*.ts` — `@asyncapi/modelina` emits payload interfaces + enums. `stripConditionals` drops `if`/`then`/`else` (Modelina mis-flattens the `then` branch); `tidyModelSource`/`dedupeUnions` clean the output. Wire keys are kept **snake_case** (payloads aren't transformed on the socket path)
 3. `generateChannels` → `channels/*.ts` + `composables/*.ts` — one `Channel<Params, Message>` subclass per `receive` operation, plus a per-channel wrapper. Reads the `x-actioncable-channel` and `x-client-supplied` extensions
 4. `renderRuntime` → `runtime.ts` — the preset's subscribe/lifecycle helper; the **only** file that imports the cable seam
-5. `writeBarrel` → `index.ts` — re-exports everything
+5. `generateContentSchemaModels` → `models/*.ts` — a second Modelina pass for every component a payload's `contentSchema` points at. The AsyncAPI processor walks message payloads only, so these are invisible to pass 1. The parser has already inlined the subtree and kept the component name in `x-parser-schema-id`; `nameNestedSchemas` copies those names into `$id`, which is what Modelina's JSON Schema path reads
+6. `generatePayloadParsers` → `payloads/*.ts` — one `parseXPayload(message)` per target, returning the decoded model (`| undefined` when the property is optional)
+7. `writeBarrel` → `index.ts` — re-exports everything
 
 **Presets** — `output.preset` (default `vue`) selects the runtime + wrapper shape: `vue` emits composables (`onScopeDispose`), `react` emits hooks (`useEffect`). Only the runtime + wrapper differ; channel classes and models are shared across presets.
 

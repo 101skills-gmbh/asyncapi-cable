@@ -9,6 +9,10 @@ import {
   clientParamsType,
   dedupeUnions,
   generateOne,
+  contentSchemaTargets,
+  contentSchemaDocument,
+  nameNestedSchemas,
+  renderPayloadParser,
   isRemoteInput,
   renderChannelClass,
   renderComposable,
@@ -270,5 +274,139 @@ test("server-derived channel generates a param-free composable end to end", asyn
     const composable = read("composables/useUserPingChannel.ts");
     assert.ok(!composable.includes("params:"));
     assert.ok(composable.includes("subscribeChannel(new UserPingChannel(), handlers)"));
+  });
+});
+
+test("contentSchemaTargets reads the component name the parser preserved", () => {
+  const content = { type: "object", "x-parser-schema-id": "Rendered" };
+  const targets = contentSchemaTargets({
+    components: {
+      schemas: {
+        Msg: {
+          properties: { payload: { contentSchema: content }, other: { type: "string" } },
+          required: ["payload"],
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(targets, [
+    { message: "Msg", property: "payload", component: "Rendered", required: true, schema: content },
+  ]);
+});
+
+test("contentSchemaTargets falls back to $ref on an unparsed document", () => {
+  const targets = contentSchemaTargets({
+    components: {
+      schemas: {
+        Msg: { properties: { payload: { contentSchema: { $ref: "#/components/schemas/Rendered" } } } },
+      },
+    },
+  });
+
+  assert.equal(targets[0].component, "Rendered");
+  assert.equal(targets[0].required, false);
+});
+
+test("contentSchemaTargets skips an inlined anonymous schema", () => {
+  // Nothing to name the model after, so generating one would invent a name.
+  const targets = contentSchemaTargets({
+    components: {
+      schemas: {
+        Msg: {
+          properties: {
+            payload: { contentSchema: { type: "object", "x-parser-schema-id": "<anonymous-schema-3>" } },
+          },
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(targets, []);
+});
+
+test("contentSchemaTargets ignores a plain string payload", () => {
+  const targets = contentSchemaTargets({
+    components: { schemas: { Msg: { properties: { payload: { type: "string" } } } } },
+  });
+
+  assert.deepEqual(targets, []);
+});
+
+test("contentSchemaDocument names the root and keeps the inlined subtree", () => {
+  const schema = contentSchemaDocument(
+    { type: "object", properties: { a: { type: "string" } } },
+    "Rendered"
+  );
+
+  assert.equal(schema.$id, "Rendered");
+  assert.equal(schema.$schema, "http://json-schema.org/draft-07/schema#");
+  assert.deepEqual(schema.properties, { a: { type: "string" } });
+});
+
+test("contentSchemaDocument returns undefined without a schema", () => {
+  assert.equal(contentSchemaDocument(undefined, "Rendered"), undefined);
+});
+
+test("nameNestedSchemas turns parser ids into $id so nested models keep their names", () => {
+  // Modelina's JSON Schema path would otherwise name this after the property
+  // holding it — `kind` -> `Kind`.
+  const named = nameNestedSchemas({
+    type: "object",
+    properties: { kind: { type: "string", "x-parser-schema-id": "WidgetKindEnum" } },
+  });
+
+  assert.equal(named.properties.kind.$id, "WidgetKindEnum");
+});
+
+test("nameNestedSchemas leaves anonymous schemas and existing ids alone", () => {
+  const named = nameNestedSchemas({
+    properties: {
+      anon: { "x-parser-schema-id": "<anonymous-schema-1>" },
+      already: { $id: "Kept", "x-parser-schema-id": "Other" },
+    },
+  });
+
+  assert.equal(named.properties.anon.$id, undefined);
+  assert.equal(named.properties.already.$id, "Kept");
+});
+
+test("renderPayloadParser guards an optional payload and casts a required one", () => {
+  const optional = renderPayloadParser({
+    message: "Msg",
+    property: "payload",
+    component: "Rendered",
+    required: false,
+  });
+  assert.match(optional, /export function parseMsgPayload\(message: Msg\): Rendered \| undefined/);
+  assert.match(optional, /if \(message\.payload === undefined\) return undefined;/);
+
+  const required = renderPayloadParser({
+    message: "Msg",
+    property: "payload",
+    component: "Rendered",
+    required: true,
+  });
+  assert.match(required, /export function parseMsgPayload\(message: Msg\): Rendered\b/);
+  assert.doesNotMatch(required, /=== undefined/);
+});
+
+test("generateOne emits models and a parser for a contentSchema payload", async () => {
+  await withGenerated({}, async (read) => {
+    // Modelina walks message payloads only, so without the second pass these
+    // components reach no client at all.
+    assert.match(read("models/WidgetRendered.ts"), /interface WidgetRendered/);
+    assert.match(read("models/WidgetRendered.ts"), /renderedAt/);
+    // Named from the parser id rather than from the property that holds it.
+    assert.match(read("models/WidgetKindEnum.ts"), /chart/);
+
+    const parser = read("payloads/parseWidgetStatusMessagePayload.ts");
+    assert.match(parser, /JSON\.parse\(message\.payload as string\) as WidgetRendered/);
+    assert.match(parser, /WidgetRendered \| undefined/);
+
+    assert.match(
+      read("index.ts"),
+      /export \* from ".\/payloads\/parseWidgetStatusMessagePayload";/
+    );
   });
 });
