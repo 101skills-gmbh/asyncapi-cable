@@ -176,6 +176,45 @@ An operation's `messages` are treated as alternatives per AsyncAPI 3 — a paylo
 
 `assert_asyncapi_broadcast` (see Quick start) validates against the *declared* message classes instead — the write side — so a spec documenting a brand-new channel can prove its payloads before the YAML artifact exists.
 
+## Broadcast objects, not serialized strings
+
+`ActionCable.server.broadcast` encodes what you hand it. Hand it a String that
+is already JSON and the wire carries a JSON string *literal* — the client parses
+twice, `contentSchema` becomes the only honest way to describe the shape, and
+validation can say no more than "it is a string".
+
+The pattern is easy to arrive at without choosing it, because the usual way to
+render a payload returns a String:
+
+```ruby
+# Encodes twice: `to_json` renders, ActionCable escapes the result
+HangarChannel.broadcast_to(user, vehicle.to_json)
+```
+
+Two costs worth knowing. Escaping every `"` as `\"` inflated a 1.2 KB payload by
+**12.4%**, paid on every message — worst on the high-frequency channels. And the
+double encoding is what makes `assert_asyncapi_broadcast` report `value at root
+is not an object`, which reads like a schema problem and is not one; both that
+failure and the `:warn_only` log now name the cause.
+
+If a renderer only returns Strings, parse once on the way out — a jbuilder host
+might pair `to_jbuilder_json` with:
+
+```ruby
+def to_jbuilder_hash(*_args)
+  JSON.parse(to_jbuilder_json)
+end
+```
+
+That parse is cheap next to the render it follows (0.3% of it, measured on the
+same payload), and it buys a message schema that describes the object itself:
+`message ::V1::Schemas::Vehicles::Vehicle` rather than a string wrapping one.
+
+A String payload is still the right answer when the transport genuinely carries
+an opaque representation — one rendered elsewhere, cached as text, or signed.
+That is what `contentMediaType` and `contentSchema` are for, and such a message
+validates without complaint.
+
 ## Which components land in a document
 
 A document's **entry points** are what `component_scope` selects *plus every
