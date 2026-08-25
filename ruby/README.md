@@ -215,6 +215,13 @@ an opaque representation — one rendered elsewhere, cached as text, or signed.
 That is what `contentMediaType` and `contentSchema` are for, and such a message
 validates without complaint.
 
+Know what it costs on the client, though. `contentSchema` is an annotation, so
+the document describes the embedded shape but nothing enforces it, and the npm
+generator does not read it: a message typed that way reaches the client as
+`payload: string`, to be cast by hand at every call site. An object payload is
+the shape that carries a type all the way through, which is the other reason to
+prefer it wherever the string is incidental rather than load-bearing.
+
 ## Which components land in a document
 
 A document's **entry points** are what `component_scope` selects *plus every
