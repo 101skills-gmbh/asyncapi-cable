@@ -176,6 +176,45 @@ An operation's `messages` are treated as alternatives per AsyncAPI 3 — a paylo
 
 `assert_asyncapi_broadcast` (see Quick start) validates against the *declared* message classes instead — the write side — so a spec documenting a brand-new channel can prove its payloads before the YAML artifact exists.
 
+## Broadcast objects, not serialized strings
+
+`ActionCable.server.broadcast` encodes what you hand it. Hand it a String that
+is already JSON and the wire carries a JSON string *literal* — the client parses
+twice, `contentSchema` becomes the only honest way to describe the shape, and
+validation can say no more than "it is a string".
+
+The pattern is easy to arrive at without choosing it, because the usual way to
+render a payload returns a String:
+
+```ruby
+# Encodes twice: `to_json` renders, ActionCable escapes the result
+WidgetChannel.broadcast_to(user, widget.to_json)
+```
+
+Two costs worth knowing. Escaping every `"` as `\"` inflated a 1.2 KB payload by
+**12.4%**, paid on every message — worst on the high-frequency channels. And the
+double encoding is what makes `assert_asyncapi_broadcast` report `value at root
+is not an object`, which reads like a schema problem and is not one; both that
+failure and the `:warn_only` log now name the cause.
+
+If a renderer only returns Strings, parse once on the way out — a jbuilder host
+might pair `to_jbuilder_json` with:
+
+```ruby
+def to_jbuilder_hash(*_args)
+  JSON.parse(to_jbuilder_json)
+end
+```
+
+That parse is cheap next to the render it follows (0.3% of it, measured on the
+same payload), and it buys a message schema that describes the object itself:
+`message ::V1::Schemas::Widgets::Widget` rather than a string wrapping one.
+
+A String payload is still the right answer when the transport genuinely carries
+an opaque representation — one rendered elsewhere, cached as text, or signed.
+That is what `contentMediaType` and `contentSchema` are for, and such a message
+validates without complaint.
+
 ## Which components land in a document
 
 A document's **entry points** are what `component_scope` selects *plus every
@@ -187,9 +226,9 @@ channel that broadcasts a rendered REST resource is to point straight at the
 component that already describes it, and that component carries no cable scope.
 
 ```ruby
-channel "hangar:{user_gid}", channel_class: HangarChannel do
-  broadcast "A vehicle in the user's hangar changed" do
-    message ::V1::Schemas::Vehicles::Vehicle   # scope :v1
+channel "widgets:{user_gid}", channel_class: WidgetChannel do
+  broadcast "A widget the user owns changed" do
+    message ::V1::Schemas::Widgets::Widget   # scope :v1
   end
 end
 ```
@@ -233,8 +272,8 @@ component beats a multi-scope one). A name still undecided after all three is a
 real ambiguity and raises, naming the candidates:
 
 ```
-Ambiguous $ref #/components/schemas/Model from Cable::V1::Schemas::HangarVehicleMessage:
-V1::Schemas::Models::Model [:v1], Admin::V1::Schemas::Models::Model [:admin].
+Ambiguous $ref #/components/schemas/Widget from Cable::V1::Schemas::WidgetMessage:
+V1::Schemas::Widgets::Widget [:v1], Admin::V1::Schemas::Widgets::Widget [:admin].
 Give the intended component a scope the referrer shares, or name the variants distinctly.
 ```
 

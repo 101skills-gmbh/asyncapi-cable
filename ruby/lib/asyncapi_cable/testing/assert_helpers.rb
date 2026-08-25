@@ -27,7 +27,11 @@ module AsyncapiCable
           next if errors.empty?
 
           asyncapi_flunk(
-            "AsyncAPI broadcast validation failed for #{stream.inspect}:\n  #{asyncapi_error_summary(errors)}"
+            [
+              "AsyncAPI broadcast validation failed for #{stream.inspect}:",
+              "  #{asyncapi_error_summary(errors)}",
+              Diagnostics.hint_for(payload, errors)
+            ].compact.join("\n")
           )
         end
 

@@ -68,6 +68,17 @@ RSpec.describe AsyncapiCable::Runtime::ChannelHook do
       expect(logger).not_to have_received(:warn)
       expect(server.received.size).to eq(1)
     end
+
+    # "value at root is not an object" sends you looking at the schema when the
+    # cause is the broadcast site handing over a serialized String.
+    it "names the cause when the payload was serialized a layer too early" do
+      logger = instance_double(Logger, warn: nil, info: nil)
+      allow(AsyncapiCable::Runtime).to receive(:logger).and_return(logger)
+
+      server.broadcast(stream, valid_payload.to_json)
+
+      expect(logger).to have_received(:warn).with(/JSON string rather than an object/)
+    end
   end
 
   describe ":enabled mode" do

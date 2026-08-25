@@ -106,6 +106,17 @@ RSpec.describe AsyncapiCable::Adapters::Minitest do
       }.to raise_error(::Minitest::Assertion, /broadcast validation failed/)
     end
 
+    # The capture already decodes one layer, so a site that broadcasts
+    # pre-serialized JSON still leaves a String where the schema wants an
+    # object. Say which of the two it is.
+    it "names the cause when the broadcast site passed serialized JSON" do
+      expect {
+        test_instance.assert_asyncapi_broadcast(params: {user_id: 42}) do
+          ActionCable.server.broadcast("42-minitest-fake", {action: "started", status: "ok"}.to_json)
+        end
+      }.to raise_error(::Minitest::Assertion, /JSON string rather than an object/)
+    end
+
     it "raises when params do not resolve the stream template" do
       expect {
         test_instance.assert_asyncapi_broadcast { nil }

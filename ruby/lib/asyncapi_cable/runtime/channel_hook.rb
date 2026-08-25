@@ -17,7 +17,7 @@ module AsyncapiCable
       errors = collect_errors(matches, payload)
       return if errors.empty?
 
-      report(mode, stream, errors)
+      report(mode, stream, errors, payload)
     end
 
     # AsyncAPI 3 treats a channel's messages as alternatives: a payload
@@ -38,9 +38,12 @@ module AsyncapiCable
       results.min_by(&:size)
     end
 
-    def self.report(mode, stream, errors)
+    def self.report(mode, stream, errors, payload = nil)
       summary = errors.map { |e| e["error"] }.compact.uniq.join("; ")
       message = "AsyncAPI broadcast validation failed for stream #{stream.inspect}: #{summary}"
+      if (hint = Diagnostics.hint_for(payload, errors))
+        message = "#{message}\n#{hint}"
+      end
 
       case mode
       when :warn_only
