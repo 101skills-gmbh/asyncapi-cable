@@ -1,5 +1,6 @@
 require "asyncapi_cable/version"
 require "asyncapi_cable/configuration"
+require "asyncapi_cable/components/reference_closure"
 require "asyncapi_cable/dsl/metadata_store"
 require "asyncapi_cable/dsl/operation_context"
 require "asyncapi_cable/dsl/channel_context"

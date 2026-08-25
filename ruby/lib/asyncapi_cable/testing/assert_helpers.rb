@@ -34,20 +34,25 @@ module AsyncapiCable
         payloads
       end
 
-      # Declared message schemas may `$ref` sibling components (enums etc.),
-      # so the validation document carries every registry class sharing the
-      # messages' scopes — the same set AsyncapiWriter publishes for those
-      # scopes. Loader#load! eager-loads classes reachable only via `$ref`
-      # strings and is idempotent. Memoized per scope set: PayloadValidator
-      # caches one compiled schema per components object.
+      # Declared message schemas may `$ref` sibling components — an enum, or a
+      # REST component an embedded payload points at — so the validation
+      # document carries every registry class sharing the messages' scopes
+      # plus the transitive closure of what those reference. That is the same
+      # set AsyncapiWriter publishes, so a payload that validates here
+      # validates against the committed document too. Loader#load!
+      # eager-loads classes reachable only via `$ref` strings and is
+      # idempotent. Memoized per scope set: PayloadValidator caches one
+      # compiled schema per components object.
       def self.components_for(message_classes)
         scopes = message_classes.flat_map(&:_component_scopes).uniq.sort
         @components ||= {}
         @components[scopes] ||= begin
           OpenapiRuby::Components::Loader.new.load!
-          schemas = OpenapiRuby::Components::Registry.instance.all_registered_classes.select { |klass|
+          scoped = OpenapiRuby::Components::Registry.instance.all_registered_classes.select { |klass|
             (klass._component_scopes & scopes).any?
-          }.to_h { |klass| [klass.component_name, klass._schema_definition] }
+          }
+          schemas = Components::ReferenceClosure.expand(scoped)
+            .to_h { |klass| [klass.component_name, klass._schema_definition] }
           {"schemas" => schemas}
         end
       end

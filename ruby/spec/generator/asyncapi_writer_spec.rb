@@ -16,9 +16,36 @@ class WriterFakeMessage
 
   schema({
     type: :object,
-    properties: {action: {type: :string}},
+    properties: {
+      action: {type: :string},
+      payload: {
+        type: :string,
+        contentSchema: {"$ref": "#/components/schemas/WriterRestOnlyComponent"}
+      }
+    },
     required: %w[action]
   })
+end
+
+# Not cable-scoped: it stands in for a REST component an embedded payload
+# points at.
+class WriterRestOnlyComponent
+  include OpenapiRuby::Components::Base
+
+  component_scopes :rest_only
+
+  schema({
+    type: :object,
+    properties: {nested: {"$ref": "#/components/schemas/WriterRestOnlyEnum"}}
+  })
+end
+
+class WriterRestOnlyEnum
+  include OpenapiRuby::Components::Base
+
+  component_scopes :rest_only
+
+  schema({type: :string, enum: %w[one two]})
 end
 
 RSpec.describe AsyncapiCable::Generator::AsyncapiWriter do
@@ -63,6 +90,17 @@ RSpec.describe AsyncapiCable::Generator::AsyncapiWriter do
       expect(parsed.dig("channels", "WriterFake", "address")).to eq("{user_id}-writer-fake")
       expect(parsed.dig("operations", "receiveWriterFake", "action")).to eq("receive")
       expect(parsed.dig("components", "schemas", "WriterFakeMessage")).to include("type" => "object")
+    end
+  end
+
+  # Without this, the document ships a pointer that resolves to nothing and
+  # @asyncapi/parser rejects the whole file.
+  it "includes components referenced by a cable message, whatever scope they carry" do
+    Dir.mktmpdir do |dir|
+      path = described_class.generate_all!(output_dir: dir, format: :yaml)[:writer_test]
+      schemas = YAML.safe_load_file(path, permitted_classes: [Symbol]).dig("components", "schemas")
+
+      expect(schemas.keys).to include("WriterRestOnlyComponent", "WriterRestOnlyEnum")
     end
   end
 

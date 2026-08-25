@@ -176,6 +176,35 @@ An operation's `messages` are treated as alternatives per AsyncAPI 3 — a paylo
 
 `assert_asyncapi_broadcast` (see Quick start) validates against the *declared* message classes instead — the write side — so a spec documenting a brand-new channel can prove its payloads before the YAML artifact exists.
 
+## Which components land in a document
+
+`component_scope` picks a document's **entry points**, not a fence around it:
+every component that scope selects is included, plus the transitive closure of
+everything those components `$ref`.
+
+That matters as soon as a message describes an embedded payload by pointing at
+an existing component — say a presence broadcast whose `payload` string carries
+a rendered REST representation:
+
+```ruby
+payload: {
+  type: :string,
+  contentMediaType: "application/json",
+  contentSchema: {"$ref": "#/components/schemas/WordCloud"}
+}
+```
+
+`WordCloud` is a REST component and carries no cable scope. Including the
+message without it would write a pointer that resolves to nothing, and
+`@asyncapi/parser` rejects the whole document (`'#/components/schemas/X' does
+not exist`). So the writer follows the reference and brings it along, together
+with anything it references in turn. A name that matches no registered
+component is left as written — the document then fails to parse, which is the
+right outcome for a typo.
+
+Runtime validation resolves components the same way, so a payload that passes
+`assert_asyncapi_broadcast` passes against the committed document too.
+
 ## Snake_case wire format
 
 The AsyncAPI doc is written from the raw schema definitions, not the camelized `OpenapiRuby::Components::Loader` projection. This is deliberate: ActionCable broadcasts are snake_case in the wild, so the cable document describes the actual wire shape rather than the REST-style camelCase view of the same component. Both the writer and the runtime validator follow the same convention.

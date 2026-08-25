@@ -46,12 +46,16 @@ module AsyncapiCable
         # classes reachable only via `$ref` strings (e.g. an enum a message
         # schema refs) aren't autoloaded by Ruby, so a raw registry scan
         # would miss them. `Loader#load!` is idempotent.
+        #
+        # Scope selects the entry points; ReferenceClosure adds what those
+        # components reference, whatever scope the referee carries.
         def load_cable_components(scope)
           OpenapiRuby::Components::Loader.new.load!
 
-          schemas = OpenapiRuby::Components::Registry.instance.all_registered_classes.select do |klass|
+          scoped = OpenapiRuby::Components::Registry.instance.all_registered_classes.select do |klass|
             klass._component_scopes.include?(scope)
-          end.each_with_object({}) do |klass, acc|
+          end
+          schemas = Components::ReferenceClosure.expand(scoped).each_with_object({}) do |klass, acc|
             acc[klass.component_name] = klass._schema_definition
           end
           {"schemas" => schemas}
