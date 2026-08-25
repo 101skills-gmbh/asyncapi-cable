@@ -20,7 +20,8 @@ module AsyncapiCable
 
         def build_document(schema_name, schema_config)
           scope = (schema_config[:component_scope] || schema_config["component_scope"] || :cable).to_sym
-          components = load_cable_components(scope)
+          contexts = Dsl::MetadataStore.contexts_for(schema_name)
+          components = load_cable_components(scope, declared: declared_messages(contexts))
 
           document = Core::Document.new(
             info: schema_config[:info] || schema_config["info"] || {},
@@ -28,11 +29,20 @@ module AsyncapiCable
             cable_components: components
           )
 
-          Dsl::MetadataStore.contexts_for(schema_name).each do |context|
+          contexts.each do |context|
             document.add_channel(context)
           end
 
           document
+        end
+
+        # Every declared message becomes a `components/messages` entry pointing
+        # at a schema of the same name, so these are referenced by construction
+        # — whatever scope they carry. A contract that reuses an existing REST
+        # component as its payload declares one that the document's own scope
+        # does not select.
+        def declared_messages(contexts)
+          contexts.flat_map { |context| context.operations.flat_map(&:messages) }.uniq
         end
 
         # Bypass OpenapiRuby::Components::Loader#to_openapi_hash and read raw
@@ -47,17 +57,20 @@ module AsyncapiCable
         # schema refs) aren't autoloaded by Ruby, so a raw registry scan
         # would miss them. `Loader#load!` is idempotent.
         #
-        # Scope selects the entry points; ReferenceClosure adds what those
-        # components reference, whatever scope the referee carries.
-        def load_cable_components(scope)
+        # Scope and the declared messages select the entry points;
+        # ReferenceClosure adds what those components reference, whatever scope
+        # the referee carries.
+        def load_cable_components(scope, declared: [])
           OpenapiRuby::Components::Loader.new.load!
 
           scoped = OpenapiRuby::Components::Registry.instance.all_registered_classes.select do |klass|
             klass._component_scopes.include?(scope)
           end
-          schemas = Components::ReferenceClosure.expand(scoped).each_with_object({}) do |klass, acc|
-            acc[klass.component_name] = klass._schema_definition
-          end
+          entry_points = (scoped + declared).uniq
+          schemas = Components::ReferenceClosure.expand(entry_points, scope: scope)
+            .each_with_object({}) do |klass, acc|
+              acc[klass.component_name] = klass._schema_definition
+            end
           {"schemas" => schemas}
         end
 

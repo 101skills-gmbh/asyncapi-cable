@@ -48,6 +48,22 @@ class WriterRestOnlyEnum
   schema({type: :string, enum: %w[one two]})
 end
 
+# Declared as a message directly, carrying no cable scope: the contract reuses
+# the REST component that already describes the broadcast payload.
+class WriterReusedRestMessage
+  include OpenapiRuby::Components::Base
+
+  component_scopes :rest_only
+
+  schema({
+    type: :object,
+    properties: {nested: {"$ref": "#/components/schemas/WriterRestOnlyEnum"}}
+  })
+end
+
+class WriterReuseChannel
+end
+
 RSpec.describe AsyncapiCable::Generator::AsyncapiWriter do
   before do
     AsyncapiCable.reset_configuration!
@@ -101,6 +117,32 @@ RSpec.describe AsyncapiCable::Generator::AsyncapiWriter do
       schemas = YAML.safe_load_file(path, permitted_classes: [Symbol]).dig("components", "schemas")
 
       expect(schemas.keys).to include("WriterRestOnlyComponent", "WriterRestOnlyEnum")
+    end
+  end
+
+  # A declared message becomes a components/messages entry pointing at a schema
+  # of the same name, so it is referenced whether or not the document's scope
+  # selects it.
+  it "includes a declared message that carries no cable scope, and its closure" do
+    ctx = AsyncapiCable::Dsl::ChannelContext.new(
+      "writer-reuse",
+      channel_class: WriterReuseChannel,
+      schema_name: :writer_test
+    )
+    ctx.broadcast("Receive reused rest payload") do
+      operationId "receiveWriterReuse"
+      message WriterReusedRestMessage
+    end
+    AsyncapiCable::Dsl::MetadataStore.register(ctx)
+
+    Dir.mktmpdir do |dir|
+      path = described_class.generate_all!(output_dir: dir, format: :yaml)[:writer_test]
+      document = YAML.safe_load_file(path, permitted_classes: [Symbol])
+      schemas = document.dig("components", "schemas")
+
+      expect(schemas.keys).to include("WriterReusedRestMessage", "WriterRestOnlyEnum")
+      expect(document.dig("components", "messages", "WriterReusedRestMessage", "payload"))
+        .to eq("$ref" => "#/components/schemas/WriterReusedRestMessage")
     end
   end
 
