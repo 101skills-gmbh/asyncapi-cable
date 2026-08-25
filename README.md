@@ -36,6 +36,7 @@ the AsyncAPI document.
 - **Platform-agnostic core** — the channel classes + models depend only on `@anycable/core`, so they run on web *and* React Native
 - **Vue & React presets** — per-target `preset` emits Vue composables (`onScopeDispose`) or React hooks (`useEffect`); only the runtime + wrapper differ
 - **Typed payloads** — message types generated via [`@asyncapi/modelina`](https://github.com/asyncapi/modelina), preserving snake_case wire keys
+- **Typed payloads behind a JSON string** — a `payload` declared as a string with `contentSchema` gets its decoded model generated plus a `parseXPayload` helper, so the cast lives in one place instead of at every call site
 - **Single cable seam** — only `runtime.ts` imports your AnyCable instance ([Orval-mutator](https://orval.dev/guides/custom-client) style), configurable per target
 - **Multi-target config** — one `cable.config.mjs` (analog of `orval.config.ts`) generates many documents at once
 - **Vendor extensions** — `x-actioncable-channel` maps to the Rails channel identifier; `x-client-supplied: false` marks server-derived params

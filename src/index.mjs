@@ -218,13 +218,197 @@ async function generateModels(document, absModelsDir) {
     exportType: "named",
   });
 
+  await tidyModelFiles(models, absModelsDir);
+
+  return models.map((m) => m.modelName);
+}
+
+async function tidyModelFiles(models, absModelsDir) {
   for (const model of models) {
     const file = path.join(absModelsDir, `${model.modelName}.ts`);
     const src = await fs.readFile(file, "utf8");
     await fs.writeFile(file, `${BANNER}\n${tidyModelSource(src)}`);
   }
+}
 
-  return models.map((m) => m.modelName);
+/**
+ * Models for every component a payload's `contentSchema` points at.
+ *
+ * Generated in a second pass from a standalone JSON Schema: Modelina's
+ * AsyncAPI processor only walks message payloads, so these components are
+ * invisible to it no matter how the document references them.
+ */
+async function generateContentSchemaModels(documentJson, absModelsDir, existing) {
+  const generator = new TypeScriptFileGenerator({
+    modelType: "interface",
+    mapType: "record",
+    constraints: {
+      propertyKey: typeScriptDefaultPropertyKeyConstraints({
+        NAMING_FORMATTER: (name) => name,
+        NO_RESERVED_KEYWORDS: (name) => name,
+      }),
+    },
+  });
+
+  const generated = [];
+  const seen = new Set(existing);
+
+  for (const target of contentSchemaTargets(documentJson)) {
+    const component = target.component;
+    if (seen.has(component)) continue;
+
+    const schema = contentSchemaDocument(target.schema, component);
+    if (!schema) continue;
+
+    const models = await generator.generateToFiles(
+      stripConditionals(schema),
+      absModelsDir,
+      {exportType: "named"}
+    );
+    await tidyModelFiles(models, absModelsDir);
+
+    for (const model of models) {
+      if (seen.has(model.modelName)) continue;
+      seen.add(model.modelName);
+      generated.push(model.modelName);
+    }
+  }
+
+  return generated;
+}
+
+/** One `parseXPayload` module per contentSchema target. */
+async function generatePayloadParsers(documentJson, absPayloadsDir) {
+  const targets = contentSchemaTargets(documentJson);
+  if (targets.length === 0) return [];
+
+  await fs.mkdir(absPayloadsDir, {recursive: true});
+
+  const written = [];
+  for (const target of targets) {
+    const source = renderPayloadParser(target);
+    const name = /export function (\w+)/.exec(source)[1];
+    await fs.writeFile(
+      path.join(absPayloadsDir, `${name}.ts`),
+      `${BANNER}\n${source}`
+    );
+    written.push(name);
+  }
+
+  return written;
+}
+
+/**
+ * Message payloads that carry a JSON string with a declared decoded shape.
+ *
+ * A cable payload is sometimes a string — the presence channels embed a
+ * rendered REST response the client parses. `contentSchema` is the standard way
+ * to say what the decoded value looks like, but Modelina walks message payloads
+ * and never follows it, so those components would reach no client.
+ *
+ * The parser dereferences `$ref`s before we see them, so the component name
+ * comes from `x-parser-schema-id`, which it preserves. An inlined anonymous
+ * schema has no name to generate under and is skipped; `$ref` is read as a
+ * fallback for a document that was never parsed.
+ *
+ * Returns `{ message, property, component, required, schema }` per occurrence,
+ * so a caller can emit the model and know which field to parse.
+ */
+export function contentSchemaTargets(documentJson) {
+  const schemas = documentJson?.components?.schemas ?? {};
+  const targets = [];
+
+  for (const [message, definition] of Object.entries(schemas)) {
+    for (const [property, node] of Object.entries(definition?.properties ?? {})) {
+      const content = node?.contentSchema;
+      if (!content) continue;
+
+      const component =
+        content["x-parser-schema-id"] ?? refName(content.$ref);
+      if (!component || component.startsWith("<anonymous")) continue;
+
+      targets.push({
+        message,
+        property,
+        component,
+        required: (definition.required ?? []).includes(property),
+        schema: content,
+      });
+    }
+  }
+
+  return targets;
+}
+
+/** `#/components/schemas/Foo` -> `Foo`; anything else -> undefined. */
+export function refName(pointer) {
+  const match = /^#\/components\/schemas\/(\w+)$/.exec(pointer ?? "");
+  return match?.[1];
+}
+
+/**
+ * A `contentSchema` subtree as its own JSON Schema, so Modelina can generate it
+ * outside the AsyncAPI processor (which only walks message payloads).
+ *
+ * The parser has already inlined every `$ref` inside it, so nothing needs
+ * resolving — only a name to generate under.
+ */
+export function contentSchemaDocument(schema, componentName) {
+  if (!schema) return undefined;
+
+  return {
+    $schema: "http://json-schema.org/draft-07/schema#",
+    ...nameNestedSchemas(schema),
+    $id: componentName,
+  };
+}
+
+/**
+ * Carries the parser's component names into `$id`.
+ *
+ * `x-parser-schema-id` is an AsyncAPI-parser convention; Modelina's JSON Schema
+ * path ignores it and names a nested model after the property that holds it —
+ * a `kind` property yields `Kind`, which is both uninformative and prone to
+ * collide across payloads. `$id` is what that path does read.
+ */
+export function nameNestedSchemas(node) {
+  if (Array.isArray(node)) return node.map(nameNestedSchemas);
+  if (node === null || typeof node !== "object") return node;
+
+  const named = Object.fromEntries(
+    Object.entries(node).map(([key, value]) => [key, nameNestedSchemas(value)])
+  );
+  const parserId = node["x-parser-schema-id"];
+  const nameable =
+    typeof parserId === "string" &&
+    !parserId.startsWith("<anonymous") &&
+    named.$id === undefined;
+
+  return nameable ? {...named, $id: parserId} : named;
+}
+
+/** `parseXPayload` helper source for one contentSchema target. */
+export function renderPayloadParser({ message, property, component, required }) {
+  const fnName = `parse${message}${property.replace(/(^|_)(\w)/g, (_, __, c) => c.toUpperCase())}`;
+  const returnType = required ? component : `${component} | undefined`;
+  const guard = required
+    ? ""
+    : `  if (message.${property} === undefined) return undefined;\n`;
+
+  return `import type {${message}} from '../models/${message}';
+import type {${component}} from '../models/${component}';
+
+/**
+ * Decodes the JSON string in \`${message}.${property}\`.
+ *
+ * The wire value is a string; the contract declares its decoded shape through
+ * \`contentSchema\`. Generated so the cast lives in one place instead of at
+ * every call site.
+ */
+export function ${fnName}(message: ${message}): ${returnType} {
+${guard}  return JSON.parse(message.${property} as string) as ${component};
+}
+`;
 }
 
 /** Read an `x-` extension off a parser node, tolerating either json() or the extensions API. */
@@ -403,7 +587,7 @@ async function generateChannels(
   return emitted;
 }
 
-async function writeBarrel(absOutDir, modelNames, channels) {
+async function writeBarrel(absOutDir, modelNames, channels, payloadParsers = []) {
   const lines = [
     ...modelNames.map((name) => `export * from "./models/${name}";`),
     ...channels.map((c) => `export * from "./channels/${c.className}";`),
@@ -411,6 +595,7 @@ async function writeBarrel(absOutDir, modelNames, channels) {
     ...channels.map(
       (c) => `export * from "./composables/${c.composableName}";`
     ),
+    ...payloadParsers.map((name) => `export * from "./payloads/${name}";`),
   ];
   await fs.writeFile(
     path.join(absOutDir, "index.ts"),
@@ -434,9 +619,17 @@ export async function generateOne({
   await fs.mkdir(path.join(absOutDir, "models"), { recursive: true });
 
   const document = await parseDocument(absInput);
+  const documentJson = document.json();
   const modelNames = await generateModels(
     document,
     path.join(absOutDir, "models")
+  );
+  modelNames.push(
+    ...(await generateContentSchemaModels(
+      documentJson,
+      path.join(absOutDir, "models"),
+      modelNames
+    ))
   );
   const channels = await generateChannels(
     document,
@@ -449,11 +642,16 @@ export async function generateOne({
     path.join(absOutDir, "runtime.ts"),
     renderRuntime(cable, preset)
   );
-  await writeBarrel(absOutDir, modelNames, channels);
+  const payloadParsers = await generatePayloadParsers(
+    documentJson,
+    path.join(absOutDir, "payloads")
+  );
+  await writeBarrel(absOutDir, modelNames, channels, payloadParsers);
 
   console.info(
     `[asyncapi-cable] ${input} -> ${outDir} ` +
-      `(${modelNames.length} models, ${channels.length} channels, ${preset})`
+      `(${modelNames.length} models, ${channels.length} channels, ` +
+      `${payloadParsers.length} payload parsers, ${preset})`
   );
 }
 
