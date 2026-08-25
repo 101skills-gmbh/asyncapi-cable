@@ -188,7 +188,7 @@ render a payload returns a String:
 
 ```ruby
 # Encodes twice: `to_json` renders, ActionCable escapes the result
-HangarChannel.broadcast_to(user, vehicle.to_json)
+WidgetChannel.broadcast_to(user, widget.to_json)
 ```
 
 Two costs worth knowing. Escaping every `"` as `\"` inflated a 1.2 KB payload by
@@ -208,7 +208,7 @@ end
 
 That parse is cheap next to the render it follows (0.3% of it, measured on the
 same payload), and it buys a message schema that describes the object itself:
-`message ::V1::Schemas::Vehicles::Vehicle` rather than a string wrapping one.
+`message ::V1::Schemas::Widgets::Widget` rather than a string wrapping one.
 
 A String payload is still the right answer when the transport genuinely carries
 an opaque representation — one rendered elsewhere, cached as text, or signed.
@@ -226,9 +226,9 @@ channel that broadcasts a rendered REST resource is to point straight at the
 component that already describes it, and that component carries no cable scope.
 
 ```ruby
-channel "hangar:{user_gid}", channel_class: HangarChannel do
-  broadcast "A vehicle in the user's hangar changed" do
-    message ::V1::Schemas::Vehicles::Vehicle   # scope :v1
+channel "widgets:{user_gid}", channel_class: WidgetChannel do
+  broadcast "A widget the user owns changed" do
+    message ::V1::Schemas::Widgets::Widget   # scope :v1
   end
 end
 ```
@@ -272,8 +272,8 @@ component beats a multi-scope one). A name still undecided after all three is a
 real ambiguity and raises, naming the candidates:
 
 ```
-Ambiguous $ref #/components/schemas/Model from Cable::V1::Schemas::HangarVehicleMessage:
-V1::Schemas::Models::Model [:v1], Admin::V1::Schemas::Models::Model [:admin].
+Ambiguous $ref #/components/schemas/Widget from Cable::V1::Schemas::WidgetMessage:
+V1::Schemas::Widgets::Widget [:v1], Admin::V1::Schemas::Widgets::Widget [:admin].
 Give the intended component a scope the referrer shares, or name the variants distinctly.
 ```
 
