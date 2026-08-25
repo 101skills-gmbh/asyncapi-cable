@@ -37,21 +37,27 @@ module AsyncapiCable
       # Declared message schemas may `$ref` sibling components — an enum, or a
       # REST component an embedded payload points at — so the validation
       # document carries every registry class sharing the messages' scopes
-      # plus the transitive closure of what those reference. That is the same
-      # set AsyncapiWriter publishes, so a payload that validates here
-      # validates against the committed document too. Loader#load!
-      # eager-loads classes reachable only via `$ref` strings and is
-      # idempotent. Memoized per scope set: PayloadValidator caches one
-      # compiled schema per components object.
+      # plus the transitive closure of what those reference. The message
+      # classes are entry points in their own right, as they are for the
+      # writer: one may well carry a scope no other component shares. That is
+      # the same set AsyncapiWriter publishes, so a payload that validates here
+      # validates against the committed document too. Memoized per scope set:
+      # PayloadValidator caches one compiled schema per components object.
+      #
+      # `Loader#load!` runs first because it is what assigns inferred scopes:
+      # reading `_component_scopes` before it has run yields an empty scope set
+      # for every class, and with it an empty components object. It eager-loads
+      # classes reachable only via `$ref` strings and is idempotent.
       def self.components_for(message_classes)
+        OpenapiRuby::Components::Loader.new.load!
+
         scopes = message_classes.flat_map(&:_component_scopes).uniq.sort
         @components ||= {}
         @components[scopes] ||= begin
-          OpenapiRuby::Components::Loader.new.load!
           scoped = OpenapiRuby::Components::Registry.instance.all_registered_classes.select { |klass|
             (klass._component_scopes & scopes).any?
           }
-          schemas = Components::ReferenceClosure.expand(scoped)
+          schemas = Components::ReferenceClosure.expand((scoped + message_classes).uniq, scope: scopes)
             .to_h { |klass| [klass.component_name, klass._schema_definition] }
           {"schemas" => schemas}
         end

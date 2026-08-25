@@ -178,9 +178,21 @@ An operation's `messages` are treated as alternatives per AsyncAPI 3 — a paylo
 
 ## Which components land in a document
 
-`component_scope` picks a document's **entry points**, not a fence around it:
-every component that scope selects is included, plus the transitive closure of
-everything those components `$ref`.
+A document's **entry points** are what `component_scope` selects *plus every
+message a channel declares*, and each entry point brings the transitive closure
+of everything it `$ref`s. Scope is not a fence around the document.
+
+The declared messages matter on their own: the most natural way to describe a
+channel that broadcasts a rendered REST resource is to point straight at the
+component that already describes it, and that component carries no cable scope.
+
+```ruby
+channel "hangar:{user_gid}", channel_class: HangarChannel do
+  broadcast "A vehicle in the user's hangar changed" do
+    message ::V1::Schemas::Vehicles::Vehicle   # scope :v1
+  end
+end
+```
 
 That matters as soon as a message describes an embedded payload by pointing at
 an existing component — say a presence broadcast whose `payload` string carries
@@ -204,6 +216,27 @@ right outcome for a typo.
 
 Runtime validation resolves components the same way, so a payload that passes
 `assert_asyncapi_broadcast` passes against the committed document too.
+
+### Shadowed component names
+
+A `component_name` is only unique within a scope. openapi-ruby hosts routinely
+document a richer admin variant of a public resource under the same name, and
+`to_openapi_hash` never meets the collision because it filters by scope before
+indexing by name. A closure walk has no such filter, so it has to say which
+variant a pointer meant — picking by registration order would write a document
+that parses cleanly and describes the wrong contract.
+
+A `$ref` means what it means in the referring component's own document, so the
+candidate sharing a scope with the referrer wins. Failing that the document's
+own scope decides, then openapi-ruby's specificity rule (a scope-specific
+component beats a multi-scope one). A name still undecided after all three is a
+real ambiguity and raises, naming the candidates:
+
+```
+Ambiguous $ref #/components/schemas/Model from Cable::V1::Schemas::HangarVehicleMessage:
+V1::Schemas::Models::Model [:v1], Admin::V1::Schemas::Models::Model [:admin].
+Give the intended component a scope the referrer shares, or name the variants distinctly.
+```
 
 ## Snake_case wire format
 
