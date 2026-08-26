@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/openapi-ruby/asyncapi-cable/compare/asyncapi-cable-v0.2.1...asyncapi-cable-v0.2.2) (2026-08-26)
+
+
+### Bug Fixes
+
+* import the params type in a generated composable ([#21](https://github.com/openapi-ruby/asyncapi-cable/issues/21)) ([c9b3e2f](https://github.com/openapi-ruby/asyncapi-cable/commit/c9b3e2f5c3d1095f53b626b671bbf150fc9f20c9))
+
 ## [0.2.1](https://github.com/101skills-gmbh/asyncapi-cable/compare/asyncapi-cable-v0.2.0...asyncapi-cable-v0.2.1) (2026-07-31)
 
 
