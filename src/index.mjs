@@ -292,11 +292,17 @@ export function renderComposable({
   const composableName = `use${channelName}Channel`;
   const paramsArg = hasParams ? `params: ${paramsName}, ` : "";
   const paramsPass = hasParams ? "params" : "";
+  // The params type has to be imported alongside the data type, or the emitted
+  // module references a name it never pulled in. Generation still succeeds —
+  // only a type-check on the output catches it.
+  const typeImports = hasParams
+    ? `type ${dataType}, type ${paramsName}`
+    : `type ${dataType}`;
 
   if (preset === "react") {
     const source = `${BANNER}
 import { useChannelSubscription, type ChannelHandlers } from "../runtime";
-import { ${className}, type ${dataType} } from "../channels/${className}";
+import { ${className}, ${typeImports} } from "../channels/${className}";
 
 /** Subscribe to ${className} for the lifetime of the component. */
 export function ${composableName}(
@@ -310,7 +316,7 @@ export function ${composableName}(
 
   const source = `${BANNER}
 import { subscribeChannel, type ChannelHandlers } from "../runtime";
-import { ${className}, type ${dataType} } from "../channels/${className}";
+import { ${className}, ${typeImports} } from "../channels/${className}";
 
 /** Subscribe to ${className} for the lifetime of the current effect scope. */
 export function ${composableName}(

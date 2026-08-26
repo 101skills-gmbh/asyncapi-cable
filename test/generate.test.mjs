@@ -272,3 +272,52 @@ test("server-derived channel generates a param-free composable end to end", asyn
     assert.ok(composable.includes("subscribeChannel(new UserPingChannel(), handlers)"));
   });
 });
+
+test("renderComposable imports the params type it references", () => {
+  // Generation succeeds either way; only a type-check on the emitted client
+  // catches a name that was used but never imported.
+  const { source: withParams } = renderComposable({
+    channelName: "Widget",
+    className: "WidgetChannel",
+    dataType: "WidgetData",
+    paramsName: "WidgetParams",
+    hasParams: true,
+    preset: "vue",
+  });
+
+  assert.match(
+    withParams,
+    /import \{ WidgetChannel, type WidgetData, type WidgetParams \} from "\.\.\/channels\/WidgetChannel";/
+  );
+});
+
+test("renderComposable omits the params type when the channel takes none", () => {
+  const { source: withoutParams } = renderComposable({
+    channelName: "Widget",
+    className: "WidgetChannel",
+    dataType: "WidgetData",
+    paramsName: "WidgetParams",
+    hasParams: false,
+    preset: "vue",
+  });
+
+  assert.match(
+    withoutParams,
+    /import \{ WidgetChannel, type WidgetData \} from "\.\.\/channels\/WidgetChannel";/
+  );
+  assert.doesNotMatch(withoutParams, /WidgetParams/);
+});
+
+test("the react preset imports the params type too", () => {
+  const { source: react } = renderComposable({
+    channelName: "Widget",
+    className: "WidgetChannel",
+    dataType: "WidgetData",
+    paramsName: "WidgetParams",
+    hasParams: true,
+    preset: "react",
+  });
+
+  assert.match(react, /type WidgetData, type WidgetParams/);
+});
+
