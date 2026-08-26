@@ -198,6 +198,10 @@ GitHub Actions trusted publisher:
 
 After this, every merged release PR publishes automatically.
 
+If a publish job was skipped but the release and tag exist, run the **Release**
+workflow manually and pick the package under `publish` — that republishes the
+tagged version instead of forcing a new one.
+
 ### RubyGems
 
 No manual first push: RubyGems supports a **pending** trusted publisher for a
