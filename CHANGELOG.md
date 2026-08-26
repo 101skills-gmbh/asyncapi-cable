@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/openapi-ruby/asyncapi-cable/compare/asyncapi-cable-v0.2.2...asyncapi-cable-v0.2.3) (2026-08-26)
+
+
+### Bug Fixes
+
+* **release:** publish the root package, and allow recovering a skipped publish ([#23](https://github.com/openapi-ruby/asyncapi-cable/issues/23)) ([25e7107](https://github.com/openapi-ruby/asyncapi-cable/commit/25e710704ffec6faf8e809dc0df5e5a07dee93f1))
+
 ## [0.2.2](https://github.com/openapi-ruby/asyncapi-cable/compare/asyncapi-cable-v0.2.1...asyncapi-cable-v0.2.2) (2026-08-26)
 
 
