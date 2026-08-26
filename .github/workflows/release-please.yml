@@ -3,6 +3,16 @@ name: Release
 on:
   push:
     branches: [main]
+  # Publishing is driven by release-please's outputs, so a release whose
+  # publish job was skipped can only be recovered by hand. This lets the
+  # already-tagged version be published without inventing a new one.
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish an already-released version"
+        type: choice
+        options: [none, npm, gem]
+        default: none
 
 permissions:
   contents: write
@@ -11,9 +21,16 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    # In manifest mode release-please prefixes its per-package outputs with the
+    # package path — except the root package, which keeps the unprefixed names.
+    # Reading only the prefixed form left the npm publish silently skipped
+    # while its GitHub release and tag were created (0.2.2), so accept both.
     outputs:
-      npm_release_created: ${{ steps.release.outputs['.--release_created'] }}
-      gem_release_created: ${{ steps.release.outputs['ruby--release_created'] }}
+      npm_release_created: >-
+        ${{ steps.release.outputs['.--release_created']
+            || steps.release.outputs.release_created }}
+      gem_release_created: >-
+        ${{ steps.release.outputs['ruby--release_created'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -27,7 +44,9 @@ jobs:
 
   publish-npm:
     needs: release-please
-    if: needs.release-please.outputs.npm_release_created == 'true'
+    if: >-
+      needs.release-please.outputs.npm_release_created == 'true'
+      || inputs.publish == 'npm'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -49,7 +68,9 @@ jobs:
 
   publish-gem:
     needs: release-please
-    if: needs.release-please.outputs.gem_release_created == 'true'
+    if: >-
+      needs.release-please.outputs.gem_release_created == 'true'
+      || inputs.publish == 'gem'
     runs-on: ubuntu-latest
     environment: rubygems
     permissions:
