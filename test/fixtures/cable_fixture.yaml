@@ -42,6 +42,11 @@ components:
           type: [integer, string, "null"]
         error_message:
           type: string
+        payload:
+          type: string
+          contentMediaType: application/json
+          contentSchema:
+            $ref: "#/components/schemas/WidgetRendered"
       required: [action, widget_id, status]
       additionalProperties: true
       allOf:
@@ -61,6 +66,18 @@ components:
           type: string
       required: [name, status]
       additionalProperties: true
+    WidgetRendered:
+      type: object
+      properties:
+        renderedAt:
+          type: string
+        kind:
+          $ref: "#/components/schemas/WidgetKindEnum"
+      required: [renderedAt]
+      additionalProperties: true
+    WidgetKindEnum:
+      type: string
+      enum: [chart, table]
   messages:
     WidgetStatusMessage:
       payload:
