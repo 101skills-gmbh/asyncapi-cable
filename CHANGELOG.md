@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/openapi-ruby/asyncapi-cable/compare/asyncapi-cable-v0.2.3...asyncapi-cable-v0.3.0) (2026-09-01)
+
+
+### Features
+
+* generate models and a parser for a contentSchema payload ([#25](https://github.com/openapi-ruby/asyncapi-cable/issues/25)) ([273820d](https://github.com/openapi-ruby/asyncapi-cable/commit/273820df781efe1dc28122430aa20f511f681f4c))
+
 ## [0.2.3](https://github.com/openapi-ruby/asyncapi-cable/compare/asyncapi-cable-v0.2.2...asyncapi-cable-v0.2.3) (2026-08-26)
 
 
